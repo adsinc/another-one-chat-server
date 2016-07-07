@@ -1,5 +1,10 @@
 package chat;
 
+import com.google.gson.JsonParseException;
+import commands.CommandData;
+import commands.CommandManager;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -13,6 +18,9 @@ import java.nio.charset.Charset;
  * todo
  */
 public class ChatServer {
+
+    @Autowired
+    private CommandManager commandManager;
 
     private int port;
 
@@ -69,6 +77,13 @@ public class ChatServer {
                 attachment.client.read(attachment.buffer, attachment, this);
             } else {
                 System.out.println("Received: " + attachment.readSb);
+                try {
+                    CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
+                    System.out.println(cmd);
+                    System.out.println(commandManager.validate(cmd));
+                } catch (JsonParseException e) {
+                    System.out.println("Can not parse command");
+                }
                 try {
                     attachment.client.close();
                 } catch (IOException e) {

@@ -8,4 +8,11 @@
         <property name="port" value="7777"/>
     </bean>
 
+    <context:annotation-config/>
+
+    <bean class="commands.CommandManager"/>
+
+    <!-- commands -->
+    <bean id="sendToAll" class="commands.SendToAllCommandAction"/>
+
 </beans>

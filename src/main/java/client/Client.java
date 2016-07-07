@@ -1,5 +1,8 @@
 package client;
 
+import com.google.gson.Gson;
+import commands.CommandData;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -16,10 +19,13 @@ public class Client {
         try {
             AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
             channel.connect(address).get();
-            ByteBuffer buffer = ByteBuffer.wrap("Hello".getBytes());
+            Gson gson = new Gson();
+            CommandData command = new CommandData();
+            command.commandName = "sendToAll";
+            command.sender = "alex";
+            command.message = "hello to all";
+            ByteBuffer buffer = ByteBuffer.wrap(gson.toJson(command).getBytes());
             channel.write(buffer).get();
-            Thread.sleep(5000);
-            channel.write(ByteBuffer.wrap("111".getBytes())).get();
         } catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

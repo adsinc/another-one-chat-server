@@ -12,7 +12,7 @@ import java.nio.charset.Charset;
 /**
  *
  */
-public class TServer {
+public class ChatServer {
     public static void main(String[] args) throws IOException {
         int port = 7777;
         SocketAddress address = new InetSocketAddress(port);
@@ -39,7 +39,6 @@ public class TServer {
                             buffer.get(data, 0, limit);
                             attachment.readSb.append(new String(data, Charset.forName("UTF-8")));
                             attachment.buffer.rewind();
-                            System.out.println(attachment.readSb);
                             attachment.client.read(attachment.buffer, attachment, this);
                         } else {
                             System.out.println("Received: " + attachment.readSb);

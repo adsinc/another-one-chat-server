@@ -38,7 +38,7 @@ public class ChatServer {
         }
     }
 
-    class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Attachment> {
+    private class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Attachment> {
         @Override
         public void completed(AsynchronousSocketChannel client, Attachment attachment) {
             attachment.server.accept(attachment, this);
@@ -55,7 +55,7 @@ public class ChatServer {
         }
     }
 
-    class ReadHandler implements CompletionHandler<Integer, Attachment> {
+    private class ReadHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
             if (result != -1) {

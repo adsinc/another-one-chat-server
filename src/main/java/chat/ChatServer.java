@@ -10,11 +10,21 @@ import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 
 /**
- *
+ * todo
  */
 public class ChatServer {
-    public static void main(String[] args) throws IOException {
-        int port = 7777;
+
+    private int port;
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public void start() {
+        System.out.println("Server started");
+    }
+
+    private void foo(String[] args) throws IOException {
         SocketAddress address = new InetSocketAddress(port);
         AsynchronousServerSocketChannel server = AsynchronousServerSocketChannel.open()
                 .bind(address);

@@ -52,9 +52,10 @@ public class ChatServer {
             attachment.server.accept(attachment, this);
             Attachment newAttachment = new Attachment();
             newAttachment.client = client;
-            newAttachment.buffer = ByteBuffer.allocate(512);
+            newAttachment.buffer = ByteBuffer.allocate(1024);
             newAttachment.readSb = new StringBuilder();
-            client.read(newAttachment.buffer, newAttachment, new ReadHandler());
+            newAttachment.isRead = true;
+            client.read(newAttachment.buffer, newAttachment, new ReadWriteHandler());
         }
 
         @Override
@@ -63,10 +64,19 @@ public class ChatServer {
         }
     }
 
-    private class ReadHandler implements CompletionHandler<Integer, Attachment> {
+    private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            if (result != -1) {
+            if (result == -1) {
+                try {
+                    attachment.client.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                return;
+            }
+
+            if (attachment.isRead) {
                 ByteBuffer buffer = attachment.buffer;
                 buffer.flip();
                 int limit = buffer.limit();
@@ -74,21 +84,25 @@ public class ChatServer {
                 buffer.get(data, 0, limit);
                 attachment.readSb.append(new String(data, Charset.forName("UTF-8")));
                 attachment.buffer.rewind();
-                attachment.client.read(attachment.buffer, attachment, this);
+
+                if (result == buffer.capacity()) {
+                    attachment.client.read(attachment.buffer, attachment, this);
+                } else {
+                    attachment.isRead = false;
+                    System.out.println("Received: " + attachment.readSb);
+                    try {
+                        CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
+                        System.out.println(cmd);
+                        System.out.println(commandManager.validate(cmd));
+                    } catch (JsonParseException e) {
+                        System.out.println("Can not parse command");
+                    }
+                }
             } else {
-                System.out.println("Received: " + attachment.readSb);
-                try {
-                    CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
-                    System.out.println(cmd);
-                    System.out.println(commandManager.validate(cmd));
-                } catch (JsonParseException e) {
-                    System.out.println("Can not parse command");
-                }
-                try {
-                    attachment.client.close();
-                } catch (IOException e) {
-                    // todo
-                }
+                attachment.client.write(attachment.buffer, attachment, this);
+                attachment.isRead = true;
+                attachment.buffer.clear();
+                attachment.client.read(attachment.buffer, attachment, this);
             }
         }
 
@@ -103,6 +117,7 @@ public class ChatServer {
         AsynchronousSocketChannel client;
         ByteBuffer buffer;
         StringBuilder readSb;
+        boolean isRead;
     }
 }
 

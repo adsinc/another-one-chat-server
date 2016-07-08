@@ -14,5 +14,7 @@
 
     <!-- commands -->
     <bean id="sendToAll" class="commands.SendToAllCommandAction"/>
+    <bean id="sendToUser" class="commands.SendToUserCommandAction"/>
+    <bean id="getServerTime" class="commands.GetServerTimeCommandAction"/>
 
 </beans>

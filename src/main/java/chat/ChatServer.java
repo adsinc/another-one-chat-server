@@ -96,10 +96,17 @@ public class ChatServer {
                         System.out.println(commandManager.validate(cmd));
                     } catch (JsonParseException e) {
                         System.out.println("Can not parse command");
+                    } finally {
+                        attachment.readSb.setLength(0);
                     }
+
+                    attachment.buffer.clear();
+                    // TODO: 08.07.16 send ACK
+                    attachment.buffer.put("OK".getBytes(Charset.forName("UTF-8")));
+                    attachment.buffer.flip();
+                    attachment.client.write(attachment.buffer, attachment, this);
                 }
             } else {
-                attachment.client.write(attachment.buffer, attachment, this);
                 attachment.isRead = true;
                 attachment.buffer.clear();
                 attachment.client.read(attachment.buffer, attachment, this);

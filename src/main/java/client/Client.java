@@ -39,7 +39,7 @@ public class Client {
                         int limit = attachment.buffer.limit();
                         byte[] data = new byte[limit];
                         attachment.buffer.get(data, 0, limit);
-                        System.out.println("Server response" + new String(data, Charset.forName("UTF-8")));
+                        System.out.println("Server response: " + new String(data, Charset.forName("UTF-8")));
 
                         attachment.buffer.clear();
                         data = createSendToAllCommand("Hello");

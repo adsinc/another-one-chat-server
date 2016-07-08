@@ -19,15 +19,18 @@ public class Client {
         try {
             AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
             channel.connect(address).get();
-            Gson gson = new Gson();
-            CommandData command = new CommandData();
-            command.commandName = "sendToAll";
-            command.sender = "alex";
-            command.message = "hello to all";
-            ByteBuffer buffer = ByteBuffer.wrap(gson.toJson(command).getBytes());
-            channel.write(buffer).get();
+            channel.write(createSendToAllCommand("hello there")).get();
         } catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    private static ByteBuffer createSendToAllCommand(String msg) {
+        Gson gson = new Gson();
+        CommandData command = new CommandData();
+        command.commandName = "sendToAll";
+        command.sender = "alex";
+        command.message = msg;
+        return ByteBuffer.wrap(gson.toJson(command).getBytes());
     }
 }

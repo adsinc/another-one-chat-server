@@ -1,4 +1,4 @@
-package chat;
+package chat.server;
 
 import org.springframework.context.support.GenericXmlApplicationContext;
 

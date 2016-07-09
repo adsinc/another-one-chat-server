@@ -1,8 +1,11 @@
-package chat;
+package chat.server;
 
+import chat.common.data.CommandData;
+import chat.common.data.ServerReply;
+import chat.common.data.SimpleFailedReply;
+import chat.server.commands.CommandManager;
+import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import commands.CommandData;
-import commands.CommandManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -13,6 +16,8 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * todo
@@ -21,8 +26,9 @@ public class ChatServer {
 
     @Autowired
     private CommandManager commandManager;
-
     private int port;
+    private final Map<String, AsynchronousSocketChannel> connections = new ConcurrentHashMap<>();
+    private final Gson gson = new Gson();
 
     public void setPort(int port) {
         this.port = port;
@@ -94,11 +100,14 @@ public class ChatServer {
                         CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
                         System.out.println(cmd);
                         System.out.println(commandManager.validate(cmd));
-                        String answer = commandManager.getCommandAction(cmd).execute(cmd);
+
+                        ServerReply answer = !attachment.loggedId
+                                ? new SimpleFailedReply("Client is not logged in")
+                                : commandManager.getCommandAction(cmd).execute(cmd, attachment, connections);
 
                         attachment.buffer.clear();
                         // TODO: 08.07.16 send ACK
-                        attachment.buffer.put(answer.getBytes(Charset.forName("UTF-8")));
+                        attachment.buffer.put(gson.toJson(answer).getBytes(Charset.forName("UTF-8")));
                         attachment.buffer.flip();
                         attachment.client.write(attachment.buffer, attachment, this);
                     } catch (JsonParseException e) {
@@ -110,7 +119,16 @@ public class ChatServer {
             } else {
                 attachment.isRead = true;
                 attachment.buffer.clear();
-                attachment.client.read(attachment.buffer, attachment, this);
+                if (!attachment.loggedId) {
+                    try {
+                        connections.values().remove(attachment.client);
+                        attachment.client.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    attachment.client.read(attachment.buffer, attachment, this);
+                }
             }
         }
 
@@ -120,12 +138,13 @@ public class ChatServer {
         }
     }
 
-    private class Attachment {
-        AsynchronousServerSocketChannel server;
-        AsynchronousSocketChannel client;
-        ByteBuffer buffer;
-        StringBuilder readSb;
-        boolean isRead;
+    public static class Attachment {
+        public AsynchronousServerSocketChannel server;
+        public AsynchronousSocketChannel client;
+        public ByteBuffer buffer;
+        public StringBuilder readSb;
+        public boolean isRead;
+        public boolean loggedId;
     }
 }
 

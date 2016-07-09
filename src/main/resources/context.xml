@@ -4,17 +4,18 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <bean id="chatServer" class="chat.ChatServer">
+    <bean id="chatServer" class="chat.server.ChatServer">
         <property name="port" value="7777"/>
     </bean>
 
     <context:annotation-config/>
 
-    <bean class="commands.CommandManager"/>
+    <bean class="chat.server.commands.CommandManager"/>
 
-    <!-- commands -->
-    <bean id="sendToAll" class="commands.SendToAllCommandAction"/>
-    <bean id="sendToUser" class="commands.SendToUserCommandAction"/>
-    <bean id="getServerTime" class="commands.GetServerTimeCommandAction"/>
+    <!-- chat.commands -->
+    <bean id="logIn" class="chat.server.commands.LogInCommandAction"/>
+    <bean id="sendToAll" class="chat.server.commands.SendToAllCommandAction"/>
+    <bean id="sendToUser" class="chat.server.commands.SendToUserCommandAction"/>
+    <bean id="getServerTime" class="chat.server.commands.GetServerTimeCommandAction"/>
 
 </beans>

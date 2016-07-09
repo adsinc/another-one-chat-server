@@ -1,5 +1,6 @@
-package commands;
+package chat.server.commands;
 
+import chat.common.data.CommandData;
 import com.google.gson.Gson;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;

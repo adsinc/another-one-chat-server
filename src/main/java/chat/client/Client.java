@@ -1,7 +1,7 @@
-package client;
+package chat.client;
 
+import chat.common.data.CommandData;
 import com.google.gson.Gson;
-import commands.CommandData;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
 
-import static commands.CommandType.*;
+import static chat.common.data.CommandType.*;
 
 /**
  * todo

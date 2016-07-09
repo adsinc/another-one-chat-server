@@ -50,7 +50,7 @@ public class Client {
         }
     }
 
-    class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+    private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
             if (attachment.isRead) {

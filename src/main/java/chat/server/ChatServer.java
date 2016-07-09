@@ -111,7 +111,6 @@ public class ChatServer {
                                 : commandManager.getCommandAction(cmd).execute(cmd, attachment, connections);
 
                         attachment.buffer.clear();
-                        // TODO: 08.07.16 send ACK
                         attachment.buffer.put(gson.toJson(answer).getBytes(Charset.forName("UTF-8")));
                         attachment.buffer.flip();
                         attachment.client.write(attachment.buffer, attachment, this);

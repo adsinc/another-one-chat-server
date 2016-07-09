@@ -38,7 +38,7 @@ public class Client {
             attachment.buffer = ByteBuffer.allocate(1024);
             attachment.mainThread = Thread.currentThread();
 
-            attachment.buffer.put(createLogInCommand("Alex"));
+            attachment.buffer.put(createLogInCommand(requestUserInput("Enter login")));
             attachment.buffer.flip();
 
             channel.write(attachment.buffer, attachment, new ReadWriteHandler());
@@ -67,13 +67,7 @@ public class Client {
                     attachment.mainThread.interrupt();
                 }
 
-                String msg = "";
-                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                try {
-                    msg = reader.readLine();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                String msg = requestUserInput("Enter command:");
 
                 attachment.buffer.clear();
                 data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
@@ -111,7 +105,7 @@ public class Client {
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
 
-    private static byte[] createSendToUserCommand(String msg) {
+    private byte[] createSendToUserCommand(String msg) {
         Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = SEND_TO_USER;
@@ -121,14 +115,14 @@ public class Client {
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
 
-    private static byte[] createGetServerTimeCommand() {
+    private byte[] createGetServerTimeCommand() {
         Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = GET_SERVER_TIME;
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
 
-    private static byte[] createLogInCommand(String login) {
+    private byte[] createLogInCommand(String login) {
         Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = LOG_IN;
@@ -136,5 +130,15 @@ public class Client {
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
 
+    private String requestUserInput(String userMessage) {
+        System.out.println(userMessage);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
 
 }

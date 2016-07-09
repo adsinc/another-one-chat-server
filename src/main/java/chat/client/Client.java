@@ -1,6 +1,7 @@
 package chat.client;
 
 import chat.common.data.CommandData;
+import chat.common.data.ServerReply;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
@@ -20,7 +21,12 @@ import static chat.common.data.CommandType.*;
  * todo
  */
 public class Client {
+
     public static void main(String[] args) throws IOException, InterruptedException {
+        new Client().start();
+    }
+
+    public void start() {
         SocketAddress address = new InetSocketAddress("localhost", 7777);
         try {
             AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
@@ -32,54 +38,60 @@ public class Client {
             attachment.buffer = ByteBuffer.allocate(1024);
             attachment.mainThread = Thread.currentThread();
 
-            attachment.buffer.put(createSendToAllCommand("Hello"));
+            attachment.buffer.put(createLogInCommand("Alex"));
             attachment.buffer.flip();
 
-            channel.write(attachment.buffer, attachment, new CompletionHandler<Integer, Attachment>() {
-                @Override
-                public void completed(Integer result, Attachment attachment) {
-                    if (attachment.isRead) {
-                        attachment.buffer.flip();
-                        int limit = attachment.buffer.limit();
-                        byte[] data = new byte[limit];
-                        attachment.buffer.get(data, 0, limit);
-                        System.out.println("Server response: " + new String(data, Charset.forName("UTF-8")));
-
-                        String msg = "";
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                        try {
-                            msg = reader.readLine();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                        attachment.buffer.clear();
-                        data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
-                        attachment.buffer.put(data);
-                        attachment.buffer.flip();
-                        attachment.isRead = false;
-                        attachment.channel.write(attachment.buffer, attachment, this);
-                    } else {
-                        attachment.isRead = true;
-                        attachment.buffer.clear();
-                        attachment.channel.read(attachment.buffer, attachment, this);
-                    }
-                }
-
-                @Override
-                public void failed(Throwable exc, Attachment attachment) {
-                    exc.printStackTrace();
-                }
-            });
-
+            channel.write(attachment.buffer, attachment, new ReadWriteHandler());
             attachment.mainThread.join();
-        } catch (IOException | InterruptedException | ExecutionException e) {
+        } catch (IOException | ExecutionException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            System.out.println("Connection closed");
         }
     }
 
-    class ReadWriteHandler {
+    class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+        @Override
+        public void completed(Integer result, Attachment attachment) {
+            if (attachment.isRead) {
+                attachment.buffer.flip();
+                int limit = attachment.buffer.limit();
+                byte[] data = new byte[limit];
+                attachment.buffer.get(data, 0, limit);
 
+                ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
+                        ServerReply.class);
+
+                System.out.println("Server response: " + reply.message);
+                if (reply.failed) {
+                    attachment.mainThread.interrupt();
+                }
+
+                String msg = "";
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                try {
+                    msg = reader.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                attachment.buffer.clear();
+                data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
+                attachment.buffer.put(data);
+                attachment.buffer.flip();
+                attachment.isRead = false;
+                attachment.channel.write(attachment.buffer, attachment, this);
+            } else {
+                attachment.isRead = true;
+                attachment.buffer.clear();
+                attachment.channel.read(attachment.buffer, attachment, this);
+            }
+        }
+
+        @Override
+        public void failed(Throwable exc, Attachment attachment) {
+            exc.printStackTrace();
+        }
     }
 
     static class Attachment {
@@ -113,6 +125,14 @@ public class Client {
         Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = GET_SERVER_TIME;
+        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+    }
+
+    private static byte[] createLogInCommand(String login) {
+        Gson gson = new Gson();
+        CommandData command = new CommandData();
+        command.commandName = LOG_IN;
+        command.sender = login;
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
 

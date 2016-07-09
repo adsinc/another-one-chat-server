@@ -3,8 +3,20 @@ package chat.common.data;
 /**
  *
  */
-public interface ServerReply {
-    String getMessage();
+public class ServerReply {
+    public String message;
+    public boolean failed;
 
-    boolean isFailed();
+    public static ServerReply createReplyOk(String message) {
+        ServerReply reply = new ServerReply();
+        reply.message = message;
+        return reply;
+    }
+
+    public static ServerReply createReplyFailed(String message) {
+        ServerReply reply = new ServerReply();
+        reply.message = message;
+        reply.failed = true;
+        return reply;
+    }
 }

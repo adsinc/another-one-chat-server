@@ -2,8 +2,9 @@ package chat.server;
 
 import chat.common.data.CommandData;
 import chat.common.data.ServerReply;
-import chat.common.data.SimpleFailedReply;
+import chat.server.commands.CommandAction;
 import chat.server.commands.CommandManager;
+import chat.server.commands.LogInCommandAction;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static chat.common.data.ServerReply.createReplyFailed;
 
 /**
  * todo
@@ -101,8 +104,10 @@ public class ChatServer {
                         System.out.println(cmd);
                         System.out.println(commandManager.validate(cmd));
 
-                        ServerReply answer = !attachment.loggedId
-                                ? new SimpleFailedReply("Client is not logged in")
+                        CommandAction action = commandManager.getCommandAction(cmd);
+
+                        ServerReply answer = !attachment.loggedId && !(action instanceof LogInCommandAction)
+                                ? createReplyFailed("Client is not logged in")
                                 : commandManager.getCommandAction(cmd).execute(cmd, attachment, connections);
 
                         attachment.buffer.clear();

@@ -3,7 +3,9 @@ package client;
 import com.google.gson.Gson;
 import commands.CommandData;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -11,6 +13,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
+
+import static commands.CommandType.*;
 
 /**
  * todo
@@ -41,8 +45,16 @@ public class Client {
                         attachment.buffer.get(data, 0, limit);
                         System.out.println("Server response: " + new String(data, Charset.forName("UTF-8")));
 
+                        String msg = "";
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                        try {
+                            msg = reader.readLine();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
                         attachment.buffer.clear();
-                        data = createSendToAllCommand("Hello");
+                        data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
                         attachment.buffer.put(data);
                         attachment.buffer.flip();
                         attachment.isRead = false;
@@ -66,6 +78,10 @@ public class Client {
         }
     }
 
+    class ReadWriteHandler {
+
+    }
+
     static class Attachment {
         AsynchronousSocketChannel channel;
         ByteBuffer buffer;
@@ -76,9 +92,29 @@ public class Client {
     private static byte[] createSendToAllCommand(String msg) {
         Gson gson = new Gson();
         CommandData command = new CommandData();
-        command.commandName = "sendToAll";
+        command.commandName = SEND_TO_ALL;
         command.sender = "alex";
+        command.visibleForAll = true;
         command.message = msg;
         return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
     }
+
+    private static byte[] createSendToUserCommand(String msg) {
+        Gson gson = new Gson();
+        CommandData command = new CommandData();
+        command.commandName = SEND_TO_USER;
+        command.sender = "alex";
+        command.receiver = "roman";
+        command.message = msg;
+        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+    }
+
+    private static byte[] createGetServerTimeCommand() {
+        Gson gson = new Gson();
+        CommandData command = new CommandData();
+        command.commandName = GET_SERVER_TIME;
+        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+    }
+
+
 }

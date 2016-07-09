@@ -94,17 +94,18 @@ public class ChatServer {
                         CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
                         System.out.println(cmd);
                         System.out.println(commandManager.validate(cmd));
+                        String answer = commandManager.getCommandAction(cmd).execute(cmd);
+
+                        attachment.buffer.clear();
+                        // TODO: 08.07.16 send ACK
+                        attachment.buffer.put(answer.getBytes(Charset.forName("UTF-8")));
+                        attachment.buffer.flip();
+                        attachment.client.write(attachment.buffer, attachment, this);
                     } catch (JsonParseException e) {
                         System.out.println("Can not parse command");
                     } finally {
                         attachment.readSb.setLength(0);
                     }
-
-                    attachment.buffer.clear();
-                    // TODO: 08.07.16 send ACK
-                    attachment.buffer.put("OK".getBytes(Charset.forName("UTF-8")));
-                    attachment.buffer.flip();
-                    attachment.client.write(attachment.buffer, attachment, this);
                 }
             } else {
                 attachment.isRead = true;

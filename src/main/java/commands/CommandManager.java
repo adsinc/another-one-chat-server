@@ -23,6 +23,10 @@ public class CommandManager implements BeanFactoryAware {
         return false;
     }
 
+    public CommandAction getCommandAction(CommandData commandData) {
+        return factory.getBean(commandData.commandName, CommandAction.class);
+    }
+
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         factory = (ConfigurableListableBeanFactory) beanFactory;

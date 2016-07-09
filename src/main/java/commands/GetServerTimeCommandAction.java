@@ -2,7 +2,8 @@ package commands;
 
 public class GetServerTimeCommandAction implements CommandAction {
     @Override
-    public void perform() {
+    public String execute(CommandData commandData) {
 
+        return "ok";
     }
 }

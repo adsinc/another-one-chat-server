@@ -4,5 +4,5 @@ package commands;
  * todo
  */
 public interface CommandAction {
-    void perform();
+    String execute(CommandData commandData);
 }

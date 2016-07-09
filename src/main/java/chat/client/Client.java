@@ -41,7 +41,7 @@ public class Client {
             attachment.buffer.put(createLogInCommand(requestUserInput("Enter login")));
             attachment.buffer.flip();
 
-            channel.write(attachment.buffer, attachment, new ReadWriteHandler());
+            channel.write(attachment.buffer, attachment, new LogInHandler());
             attachment.mainThread.join();
         } catch (IOException | ExecutionException e) {
             e.printStackTrace();
@@ -50,36 +50,98 @@ public class Client {
         }
     }
 
-    private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+    private class LogInHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            if (attachment.isRead) {
-                attachment.buffer.flip();
-                int limit = attachment.buffer.limit();
-                byte[] data = new byte[limit];
-                attachment.buffer.get(data, 0, limit);
+            attachment.isRead = true;
+            attachment.buffer.clear();
+            try {
+                attachment.channel.read(attachment.buffer).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
 
-                ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
-                        ServerReply.class);
+            attachment.buffer.flip();
+            int limit = attachment.buffer.limit();
+            byte[] data = new byte[limit];
+            attachment.buffer.get(data, 0, limit);
 
+            ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
+                    ServerReply.class);
+
+            System.out.println("Server response: " + reply.message);
+            if (reply.failed) {
+                attachment.mainThread.interrupt();
+            }
+
+            Attachment readAttachment = new Attachment();
+            readAttachment.buffer = ByteBuffer.allocate(1024);
+            readAttachment.channel = attachment.channel;
+            readAttachment.mainThread = attachment.mainThread;
+            attachment.channel.read(attachment.buffer, readAttachment, new ReadHandler());
+
+            System.out.println("Server response: " + reply.message);
+            if (reply.failed) {
+                attachment.mainThread.interrupt();
+            }
+
+            String msg = requestUserInput("Enter command:");
+
+            attachment.buffer.clear();
+            data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
+            attachment.buffer.put(data);
+            attachment.buffer.flip();
+            attachment.isRead = false;
+            attachment.channel.write(attachment.buffer, attachment, new WriteHandler());
+        }
+
+        @Override
+        public void failed(Throwable exc, Attachment attachment) {
+            exc.printStackTrace();
+        }
+    }
+
+    private class ReadHandler implements CompletionHandler<Integer, Attachment> {
+        @Override
+        public void completed(Integer result, Attachment attachment) {
+            attachment.buffer.flip();
+            int limit = attachment.buffer.limit();
+            byte[] data = new byte[limit];
+            attachment.buffer.get(data, 0, limit);
+
+            ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
+                    ServerReply.class);
+
+            if (reply != null) {
                 System.out.println("Server response: " + reply.message);
                 if (reply.failed) {
                     attachment.mainThread.interrupt();
                 }
-
-                String msg = requestUserInput("Enter command:");
-
-                attachment.buffer.clear();
-                data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
-                attachment.buffer.put(data);
-                attachment.buffer.flip();
-                attachment.isRead = false;
-                attachment.channel.write(attachment.buffer, attachment, this);
-            } else {
-                attachment.isRead = true;
-                attachment.buffer.clear();
-                attachment.channel.read(attachment.buffer, attachment, this);
             }
+
+            attachment.buffer.clear();
+
+            attachment.channel.read(attachment.buffer, attachment, this);
+        }
+
+        @Override
+        public void failed(Throwable exc, Attachment attachment) {
+            exc.printStackTrace();
+        }
+    }
+
+    private class WriteHandler implements CompletionHandler<Integer, Attachment> {
+        @Override
+        public void completed(Integer result, Attachment attachment) {
+            String msg = requestUserInput("Enter command:");
+            attachment.buffer.clear();
+            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
+            attachment.buffer.put(data);
+            attachment.buffer.flip();
+            attachment.isRead = false;
+            attachment.channel.write(attachment.buffer, attachment, this);
         }
 
         @Override

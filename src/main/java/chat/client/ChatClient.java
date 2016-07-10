@@ -182,7 +182,8 @@ public class ChatClient {
     }
 
     private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) throws ClientException {
-        String msg = requestUserInput("Enter command:");
+        String msg = requestUserInput("Enter command in format '[command_name]#[message]' " +
+                "where command_name is one of: sendToAll, getServerTime, sendToUser#[userLogin]");
         byte[] data = commandDataManager.createCommandData(msg);
         send(data, attachment, writeHandler);
     }

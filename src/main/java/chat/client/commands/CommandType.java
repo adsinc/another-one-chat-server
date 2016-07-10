@@ -1,5 +1,6 @@
 package chat.client.commands;
 
+import chat.client.ClientException;
 import chat.common.data.CommandData;
 
 /**
@@ -13,5 +14,5 @@ public interface CommandType {
 
     String getName();
 
-    CommandData createCommandData(String message);
+    CommandData createCommandData(String message) throws ClientException;
 }

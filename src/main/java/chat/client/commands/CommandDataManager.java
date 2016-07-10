@@ -22,9 +22,9 @@ public class CommandDataManager implements BeanFactoryAware {
     }
 
     private CommandType extractCommandType(String userInput) throws ClientException {
-        String[] parts = userInput.split(CMD_DELIMITER);
-        if (parts.length < 2)
+        if (!userInput.contains(CMD_DELIMITER))
             throw new ClientException("Incorrect command format.");
+        String[] parts = userInput.split(CMD_DELIMITER);
         String typeName = parts[0];
         for (String name : factory.getBeanNamesForType(CommandType.class)) {
             if (name.equals(typeName)) {

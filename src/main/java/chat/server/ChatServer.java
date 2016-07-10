@@ -101,7 +101,6 @@ public class ChatServer {
                     System.out.println("Received: " + attachment.readSb);
                     try {
                         CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
-                        System.out.println(cmd);
                         System.out.println(commandManager.validate(cmd));
 
                         CommandAction action = commandManager.getCommandAction(cmd);

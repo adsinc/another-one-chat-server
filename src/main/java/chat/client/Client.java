@@ -82,11 +82,6 @@ public class Client {
             readAttachment.mainThread = attachment.mainThread;
             attachment.channel.read(attachment.buffer, readAttachment, new ReadHandler());
 
-            System.out.println("Server response: " + reply.message);
-            if (reply.failed) {
-                attachment.mainThread.interrupt();
-            }
-
             String msg = requestUserInput("Enter command:");
 
             attachment.buffer.clear();

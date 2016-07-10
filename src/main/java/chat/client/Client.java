@@ -63,7 +63,7 @@ public class Client {
                 e.printStackTrace();
             }
 
-            ServerReply reply = new Gson().fromJson(readString(attachment.buffer), ServerReply.class);
+            ServerReply reply = readReply(attachment.buffer);
 
             System.out.println("Server response: " + reply.message);
             if (reply.failed) {
@@ -91,7 +91,7 @@ public class Client {
     private class ReadHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            ServerReply reply = new Gson().fromJson(readString(attachment.buffer), ServerReply.class);
+            ServerReply reply = readReply(attachment.buffer);
 
             if (reply != null) {
                 System.out.println("Server response: " + reply.sender + " > " + reply.message);
@@ -101,7 +101,6 @@ public class Client {
             }
 
             attachment.buffer.clear();
-
             attachment.channel.read(attachment.buffer, attachment, this);
         }
 
@@ -131,12 +130,12 @@ public class Client {
         Thread mainThread;
     }
 
-    private String readString(ByteBuffer buffer) {
+    private ServerReply readReply(ByteBuffer buffer) {
         buffer.flip();
         int limit = buffer.limit();
         byte[] data = new byte[limit];
         buffer.get(data, 0, limit);
-        return new String(data, UTF8);
+        return gson.fromJson(new String(data, UTF8), ServerReply.class);
     }
 
     private void send(byte[] data, Attachment attachment, CompletionHandler<Integer, Attachment> handler) {

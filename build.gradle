@@ -17,10 +17,10 @@ dependencies {
 
 task serverRun(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
-    main = "chat.ServerRunner"
+    main = "chat.server.ServerRunner"
 }
 
 task clientRun(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
-    main = "client.Client"
+    main = "chat.client.ClientRunner"
 }

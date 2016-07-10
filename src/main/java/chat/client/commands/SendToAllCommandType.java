@@ -13,14 +13,14 @@ public class SendToAllCommandType implements CommandType {
     }
 
     @Override
-    public CommandData createCommandData(String message) throws ClientException {
+    public CommandData createCommandData(String senderLogin, String message) throws ClientException {
         String msg = message.trim();
         if (message.trim().isEmpty())
             throw new ClientException("Message is empty");
 
         CommandData command = new CommandData();
         command.commandName = SEND_TO_ALL;
-        command.sender = "alex";
+        command.sender = senderLogin;
         command.message = msg;
         return command;
     }

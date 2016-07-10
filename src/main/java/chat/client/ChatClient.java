@@ -52,7 +52,9 @@ public class ChatClient {
             attachment.channel = channel;
             attachment.mainThread = Thread.currentThread();
 
-            send(commandDataManager.createCommandData(LOG_IN + CMD_DELIMITER + requestUserInput("Enter login")),
+            String login = requestUserInput("Enter login");
+            attachment.login = login;
+            send(commandDataManager.createCommandData(null, LOG_IN + CMD_DELIMITER + login),
                     attachment, new LogInHandler());
 
             attachment.mainThread.join();
@@ -142,17 +144,19 @@ public class ChatClient {
     }
 
     private class Attachment {
+        AsynchronousSocketChannel channel;
+        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+        Thread mainThread;
+        String login;
+
         Attachment() {
         }
 
         Attachment(Attachment src) {
             channel = src.channel;
             mainThread = src.mainThread;
+            login = src.login;
         }
-
-        AsynchronousSocketChannel channel;
-        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-        Thread mainThread;
     }
 
     private ServerReply readReply(ByteBuffer buffer) {
@@ -184,7 +188,7 @@ public class ChatClient {
     private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) throws ClientException {
         String msg = requestUserInput("Enter command 'sendToAll#[message]', 'getServerTime#', " +
                 "sendToUser#[userLogin]#[message]");
-        byte[] data = commandDataManager.createCommandData(msg);
+        byte[] data = commandDataManager.createCommandData(attachment.login, msg);
         send(data, attachment, writeHandler);
     }
 

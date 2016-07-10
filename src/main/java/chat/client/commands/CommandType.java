@@ -14,5 +14,5 @@ public interface CommandType {
 
     String getName();
 
-    CommandData createCommandData(String message) throws ClientException;
+    CommandData createCommandData(String senderLogin, String message) throws ClientException;
 }

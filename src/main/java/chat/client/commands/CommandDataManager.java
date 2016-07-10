@@ -15,10 +15,10 @@ public class CommandDataManager implements BeanFactoryAware {
     private final Gson gson = new Gson();
     private ConfigurableListableBeanFactory factory;
 
-    public byte[] createCommandData(String userInput) throws ClientException {
+    public byte[] createCommandData(String sender, String userInput) throws ClientException {
         CommandType commandType = extractCommandType(userInput);
         String message = userInput.substring((commandType.getName() + CMD_DELIMITER).length());
-        return gson.toJson(commandType.createCommandData(message)).getBytes(UTF8);
+        return gson.toJson(commandType.createCommandData(sender, message)).getBytes(UTF8);
     }
 
     private CommandType extractCommandType(String userInput) throws ClientException {

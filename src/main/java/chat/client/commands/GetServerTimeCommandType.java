@@ -12,7 +12,7 @@ public class GetServerTimeCommandType implements CommandType {
     }
 
     @Override
-    public CommandData createCommandData(String message) {
+    public CommandData createCommandData(String senderLogin, String message) {
         CommandData command = new CommandData();
         command.commandName = GET_SERVER_TIME;
         return command;

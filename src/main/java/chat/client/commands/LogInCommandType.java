@@ -13,7 +13,7 @@ public class LogInCommandType implements CommandType {
     }
 
     @Override
-    public CommandData createCommandData(String login) throws ClientException {
+    public CommandData createCommandData(String senderLogin, String login) throws ClientException {
         if (login.isEmpty())
             throw new ClientException("Login is empty");
         CommandData command = new CommandData();

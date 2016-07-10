@@ -107,7 +107,7 @@ public class ChatServer {
 
                         ServerReply answer = !attachment.loggedId && !(action instanceof LogInCommandAction)
                                 ? createReplyFailed("Client is not logged in")
-                                : commandManager.getCommandAction(cmd).execute(cmd, attachment, connections);
+                                : action.execute(cmd, attachment, connections);
 
                         attachment.buffer.clear();
                         attachment.buffer.put(gson.toJson(answer).getBytes(Charset.forName("UTF-8")));

@@ -1,8 +1,9 @@
 package chat.client;
 
-import chat.common.data.CommandData;
+import chat.client.commands.CommandDataManager;
 import chat.common.data.ServerReply;
 import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,22 +16,33 @@ import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
 
-import static chat.common.data.CommandType.*;
+import static chat.client.commands.CommandDataManager.CMD_DELIMITER;
+import static chat.client.commands.CommandType.LOG_IN;
 
 /**
  * todo
  */
-public class Client {
+public class ChatClient {
     private final static int BUFFER_SIZE = 1024;
     private final static Charset UTF8 = Charset.forName("UTF-8");
     private final Gson gson = new Gson();
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        new Client().start();
+    @Autowired
+    private CommandDataManager commandDataManager;
+
+    private String host;
+    private int port;
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public void start() {
-        SocketAddress address = new InetSocketAddress("localhost", 7777);
+        SocketAddress address = new InetSocketAddress(host, port);
         try {
             AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
             channel.connect(address).get();
@@ -40,13 +52,16 @@ public class Client {
             attachment.channel = channel;
             attachment.mainThread = Thread.currentThread();
 
-            send(createLogInCommand(requestUserInput("Enter login")), attachment, new LogInHandler());
+            send(commandDataManager.createCommandData(LOG_IN + CMD_DELIMITER + requestUserInput("Enter login")),
+                    attachment, new LogInHandler());
 
             attachment.mainThread.join();
         } catch (IOException | ExecutionException e) {
             System.err.println("Connection to server failed");
         } catch (InterruptedException e) {
-            System.out.println("Connection closed");
+            System.err.println("Connection closed");
+        } catch (ClientException e) {
+            e.printStackTrace();
         }
     }
 
@@ -72,7 +87,13 @@ public class Client {
             Attachment readAttachment = new Attachment(attachment);
             attachment.channel.read(readAttachment.buffer, readAttachment, new ReadHandler());
 
-            getAndSendUserInput(attachment, new WriteHandler());
+            WriteHandler writeHandler = new WriteHandler();
+            try {
+                getAndSendUserInput(attachment, writeHandler);
+            } catch (ClientException e) {
+                System.err.println(e.getMessage());
+                writeHandler.completed(result, attachment);
+            }
         }
 
         @Override
@@ -106,7 +127,11 @@ public class Client {
     private class WriteHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            getAndSendUserInput(attachment, this);
+            try {
+                getAndSendUserInput(attachment, this);
+            } catch (ClientException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
@@ -144,38 +169,6 @@ public class Client {
         attachment.channel.write(attachment.buffer, attachment, handler);
     }
 
-
-    private byte[] createSendToAllCommand(String msg) {
-        CommandData command = new CommandData();
-        command.commandName = SEND_TO_ALL;
-        command.sender = "alex";
-        command.visibleForAll = true;
-        command.message = msg;
-        return gson.toJson(command).getBytes(UTF8);
-    }
-
-    private byte[] createSendToUserCommand(String msg) {
-        CommandData command = new CommandData();
-        command.commandName = SEND_TO_USER;
-        command.sender = "alex";
-        command.receiver = "roman";
-        command.message = msg;
-        return gson.toJson(command).getBytes(UTF8);
-    }
-
-    private byte[] createGetServerTimeCommand() {
-        CommandData command = new CommandData();
-        command.commandName = GET_SERVER_TIME;
-        return gson.toJson(command).getBytes(UTF8);
-    }
-
-    private byte[] createLogInCommand(String login) {
-        CommandData command = new CommandData();
-        command.commandName = LOG_IN;
-        command.sender = login;
-        return gson.toJson(command).getBytes(UTF8);
-    }
-
     private String requestUserInput(String userMessage) {
         System.out.println(userMessage);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -187,9 +180,9 @@ public class Client {
         return "";
     }
 
-    private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) {
+    private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) throws ClientException {
         String msg = requestUserInput("Enter command:");
-        byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
+        byte[] data = commandDataManager.createCommandData(msg);
         send(data, attachment, writeHandler);
     }
 

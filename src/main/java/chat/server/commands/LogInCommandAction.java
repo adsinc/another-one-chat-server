@@ -20,7 +20,7 @@ public class LogInCommandAction implements CommandAction {
                         Map<String, AsynchronousSocketChannel> clients,
                         BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
         if (attachment.loggedId) {
-            createReplyFailed("Client already logged");
+            createReplyFailed("ChatClient already logged");
         } else {
             attachment.loggedId = true;
             clients.put(cmd.sender, attachment.client);

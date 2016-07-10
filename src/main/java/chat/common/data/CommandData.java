@@ -8,5 +8,4 @@ public class CommandData {
     public String sender;
     public String message;
     public String receiver;
-    public boolean visibleForAll;
 }

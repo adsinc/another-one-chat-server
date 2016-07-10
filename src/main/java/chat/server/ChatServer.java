@@ -120,7 +120,7 @@ public class ChatServer {
                         BiFunction<ServerReply, AsynchronousSocketChannel, Void> replyFn = createReplyFn(attachment);
 
                         if (!attachment.loggedId && !(action instanceof LogInCommandAction))
-                            replyFn.apply(createReplyFailed("Client is not logged in"), attachment.client);
+                            replyFn.apply(createReplyFailed("ChatClient is not logged in"), attachment.client);
                         else action.execute(cmd, attachment, connections, replyFn);
 
                     } catch (JsonParseException e) {

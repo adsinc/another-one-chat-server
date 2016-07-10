@@ -13,6 +13,6 @@ import java.util.function.BiFunction;
  */
 public interface CommandAction {
     void execute(CommandData commandData, ChatServer.Attachment attachment,
-                 Map<String, AsynchronousSocketChannel> clients,
+                 Map<String, ChatServer.Attachment> clients,
                  BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn);
 }

@@ -31,7 +31,7 @@ public class ChatServer {
     @Autowired
     private CommandManager commandManager;
     private int port;
-    private final Map<String, AsynchronousSocketChannel> connections = new ConcurrentHashMap<>();
+    private final Map<String, Attachment> connections = new ConcurrentHashMap<>();
     private final Gson gson = new Gson();
 
     public void setPort(int port) {
@@ -117,11 +117,13 @@ public class ChatServer {
 
                         CommandAction action = commandManager.getCommandAction(cmd);
 
-                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> replyFn = createReplyFn(attachment);
+                        if (attachment.replyFn == null) {
+                            attachment.replyFn = createReplyFn(attachment);
+                        }
 
                         if (!attachment.loggedId && !(action instanceof LogInCommandAction))
-                            replyFn.apply(createReplyFailed("ChatClient is not logged in"), attachment.client);
-                        else action.execute(cmd, attachment, connections, replyFn);
+                            attachment.replyFn.apply(createReplyFailed("ChatClient is not logged in"), attachment.client);
+                        else action.execute(cmd, attachment, connections, attachment.replyFn);
 
                     } catch (JsonParseException e) {
                         System.out.println("Can not parse command");
@@ -134,7 +136,7 @@ public class ChatServer {
                 attachment.buffer.clear();
                 if (!attachment.loggedId) {
                     try {
-                        connections.values().remove(attachment.client);
+                        connections.values().remove(attachment);
                         attachment.client.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -158,6 +160,7 @@ public class ChatServer {
         public StringBuilder readSb;
         public boolean isRead;
         public boolean loggedId;
+        public BiFunction<ServerReply, AsynchronousSocketChannel, Void> replyFn;
     }
 }
 

@@ -13,7 +13,7 @@ import static chat.common.data.ServerReply.createReplyOk;
 public class SendToUserCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData,
-                        ChatServer.Attachment attachment, Map<String, AsynchronousSocketChannel> clients,
+                        ChatServer.Attachment attachment, Map<String, ChatServer.Attachment> clients,
                         BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
 
         String receiver = commandData.receiver;
@@ -29,7 +29,7 @@ public class SendToUserCommandAction implements CommandAction {
 
         ServerReply serverReply = createReplyOk(commandData.message);
         serverReply.sender = commandData.sender;
-        sendAnswerFn.apply(serverReply, clients.get(receiver));
+        sendAnswerFn.apply(serverReply, clients.get(receiver).client);
         sendAnswerFn.apply(serverReply, attachment.client);
     }
 }

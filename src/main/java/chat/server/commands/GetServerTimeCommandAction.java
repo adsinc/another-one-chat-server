@@ -14,7 +14,7 @@ import static chat.common.data.ServerReply.createReplyOk;
 public class GetServerTimeCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData, ChatServer.Attachment attachment,
-                        Map<String, AsynchronousSocketChannel> clients,
+                        Map<String, ChatServer.Attachment> clients,
                         BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
         sendAnswerFn.apply(createReplyOk("Server time: " + LocalDateTime.now().toString()), attachment.client);
     }

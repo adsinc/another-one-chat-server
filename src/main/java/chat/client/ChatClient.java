@@ -130,7 +130,8 @@ public class ChatClient {
             try {
                 getAndSendUserInput(attachment, this);
             } catch (ClientException e) {
-                e.printStackTrace();
+                System.err.println(e.getMessage());
+                completed(result, attachment);
             }
         }
 

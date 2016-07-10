@@ -23,4 +23,5 @@ task serverRun(type: JavaExec) {
 task clientRun(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
     main = "chat.client.ClientRunner"
+    standardInput = System.in
 }

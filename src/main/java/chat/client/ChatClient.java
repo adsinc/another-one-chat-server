@@ -79,7 +79,7 @@ public class ChatClient {
 
             ServerReply reply = readReply(attachment.buffer);
 
-            System.out.println("Server response: " + reply.message);
+            System.out.println("< " + reply.message);
             if (reply.failed) {
                 attachment.mainThread.interrupt();
             }
@@ -108,7 +108,7 @@ public class ChatClient {
             ServerReply reply = readReply(attachment.buffer);
 
             if (reply != null) {
-                System.out.println("Server response: " + reply.sender + " > " + reply.message);
+                System.out.println("< " + (reply.sender == null ? "" : (reply.sender + " > ")) + reply.message);
                 if (reply.failed) {
                     attachment.mainThread.interrupt();
                 }
@@ -182,8 +182,8 @@ public class ChatClient {
     }
 
     private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) throws ClientException {
-        String msg = requestUserInput("Enter command in format '[command_name]#[message]' " +
-                "where command_name is one of: sendToAll, getServerTime, sendToUser#[userLogin]");
+        String msg = requestUserInput("Enter command 'sendToAll#[message]', 'getServerTime#', " +
+                "sendToUser#[userLogin]#[message]");
         byte[] data = commandDataManager.createCommandData(msg);
         send(data, attachment, writeHandler);
     }

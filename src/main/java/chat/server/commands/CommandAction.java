@@ -6,11 +6,13 @@ import chat.server.ChatServer;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * todo
  */
 public interface CommandAction {
-    ServerReply execute(CommandData commandData, ChatServer.Attachment attachment,
-                        Map<String, AsynchronousSocketChannel> clients);
+    void execute(CommandData commandData, ChatServer.Attachment attachment,
+                 Map<String, AsynchronousSocketChannel> clients,
+                 BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn);
 }

@@ -19,6 +19,7 @@ import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 import static chat.common.data.ServerReply.createReplyFailed;
 
@@ -74,6 +75,17 @@ public class ChatServer {
     }
 
     private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+
+        private BiFunction<ServerReply, AsynchronousSocketChannel, Void> createReplyFn(Attachment attachment) {
+            return (serverReply, channel) -> {
+                attachment.buffer.clear();
+                attachment.buffer.put(gson.toJson(serverReply).getBytes(Charset.forName("UTF-8")));
+                attachment.buffer.flip();
+                attachment.client.write(attachment.buffer, attachment, ReadWriteHandler.this);
+                return null;
+            };
+        }
+
         @Override
         public void completed(Integer result, Attachment attachment) {
             if (result == -1) {
@@ -105,14 +117,12 @@ public class ChatServer {
 
                         CommandAction action = commandManager.getCommandAction(cmd);
 
-                        ServerReply answer = !attachment.loggedId && !(action instanceof LogInCommandAction)
-                                ? createReplyFailed("Client is not logged in")
-                                : action.execute(cmd, attachment, connections);
+                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> replyFn = createReplyFn(attachment);
 
-                        attachment.buffer.clear();
-                        attachment.buffer.put(gson.toJson(answer).getBytes(Charset.forName("UTF-8")));
-                        attachment.buffer.flip();
-                        attachment.client.write(attachment.buffer, attachment, this);
+                        if (!attachment.loggedId && !(action instanceof LogInCommandAction))
+                            replyFn.apply(createReplyFailed("Client is not logged in"), attachment.client);
+                        else action.execute(cmd, attachment, connections, replyFn);
+
                     } catch (JsonParseException e) {
                         System.out.println("Can not parse command");
                     } finally {

@@ -6,6 +6,7 @@ import chat.server.ChatServer;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import static chat.common.data.ServerReply.createReplyFailed;
 import static chat.common.data.ServerReply.createReplyOk;
@@ -15,13 +16,15 @@ import static chat.common.data.ServerReply.createReplyOk;
  */
 public class LogInCommandAction implements CommandAction {
     @Override
-    public ServerReply execute(CommandData cmd, ChatServer.Attachment attachment,
-                               Map<String, AsynchronousSocketChannel> clients) {
+    public void execute(CommandData cmd, ChatServer.Attachment attachment,
+                        Map<String, AsynchronousSocketChannel> clients,
+                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
         if (attachment.loggedId) {
-            return createReplyFailed("Client already logged");
+            createReplyFailed("Client already logged");
+        } else {
+            attachment.loggedId = true;
+            clients.put(cmd.sender, attachment.client);
+            sendAnswerFn.apply(createReplyOk("Logged as: " + cmd.sender), attachment.client);
         }
-        attachment.loggedId = true;
-        clients.put(cmd.sender, attachment.client);
-        return createReplyOk("Logged as: " + cmd.sender);
     }
 }

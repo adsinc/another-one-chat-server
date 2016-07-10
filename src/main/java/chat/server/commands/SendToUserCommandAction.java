@@ -27,7 +27,7 @@ public class SendToUserCommandAction implements CommandAction {
             return;
         }
 
-        ServerReply serverReply = createReplyOk("ok");
+        ServerReply serverReply = createReplyOk(commandData.sender + ": " + commandData.message);
         serverReply.sender = commandData.sender;
         sendAnswerFn.apply(serverReply, clients.get(receiver));
         sendAnswerFn.apply(serverReply, attachment.client);

@@ -77,11 +77,11 @@ public class ChatServer {
     private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
 
         private BiFunction<ServerReply, AsynchronousSocketChannel, Void> createReplyFn(Attachment attachment) {
-            return (serverReply, channel) -> {
+            return (serverReply, client) -> {
                 attachment.buffer.clear();
                 attachment.buffer.put(gson.toJson(serverReply).getBytes(Charset.forName("UTF-8")));
                 attachment.buffer.flip();
-                attachment.client.write(attachment.buffer, attachment, ReadWriteHandler.this);
+                client.write(attachment.buffer, attachment, ReadWriteHandler.this);
                 return null;
             };
         }

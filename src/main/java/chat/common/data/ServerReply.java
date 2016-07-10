@@ -4,6 +4,7 @@ package chat.common.data;
  *
  */
 public class ServerReply {
+    public String sender;
     public String message;
     public boolean failed;
 

@@ -22,6 +22,9 @@ import static chat.common.data.CommandType.*;
  */
 public class Client {
 
+    private final static Charset UTF8 = Charset.forName("UTF-8");
+    private final Gson gson = new Gson();
+
     public static void main(String[] args) throws IOException, InterruptedException {
         new Client().start();
     }
@@ -63,13 +66,7 @@ public class Client {
                 e.printStackTrace();
             }
 
-            attachment.buffer.flip();
-            int limit = attachment.buffer.limit();
-            byte[] data = new byte[limit];
-            attachment.buffer.get(data, 0, limit);
-
-            ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
-                    ServerReply.class);
+            ServerReply reply = new Gson().fromJson(readString(attachment.buffer), ServerReply.class);
 
             System.out.println("Server response: " + reply.message);
             if (reply.failed) {
@@ -85,7 +82,7 @@ public class Client {
             String msg = requestUserInput("Enter command:");
 
             attachment.buffer.clear();
-            data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
+            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
             attachment.buffer.put(data);
             attachment.buffer.flip();
             attachment.isRead = false;
@@ -98,16 +95,22 @@ public class Client {
         }
     }
 
+    private String readString(ByteBuffer buffer) {
+        buffer.flip();
+        int limit = buffer.limit();
+        byte[] data = new byte[limit];
+        buffer.get(data, 0, limit);
+        return new String(data, UTF8);
+    }
+
+//    private String toJson() {
+//
+//    }
+
     private class ReadHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            attachment.buffer.flip();
-            int limit = attachment.buffer.limit();
-            byte[] data = new byte[limit];
-            attachment.buffer.get(data, 0, limit);
-
-            ServerReply reply = new Gson().fromJson(new String(data, Charset.forName("UTF-8")),
-                    ServerReply.class);
+            ServerReply reply = new Gson().fromJson(readString(attachment.buffer), ServerReply.class);
 
             if (reply != null) {
                 System.out.println("Server response: " + reply.sender + " > " + reply.message);
@@ -152,39 +155,35 @@ public class Client {
         boolean isRead;
     }
 
-    private static byte[] createSendToAllCommand(String msg) {
-        Gson gson = new Gson();
+    private byte[] createSendToAllCommand(String msg) {
         CommandData command = new CommandData();
         command.commandName = SEND_TO_ALL;
         command.sender = "alex";
         command.visibleForAll = true;
         command.message = msg;
-        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+        return gson.toJson(command).getBytes(UTF8);
     }
 
     private byte[] createSendToUserCommand(String msg) {
-        Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = SEND_TO_USER;
         command.sender = "alex";
         command.receiver = "roman";
         command.message = msg;
-        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+        return gson.toJson(command).getBytes(UTF8);
     }
 
     private byte[] createGetServerTimeCommand() {
-        Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = GET_SERVER_TIME;
-        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+        return gson.toJson(command).getBytes(UTF8);
     }
 
     private byte[] createLogInCommand(String login) {
-        Gson gson = new Gson();
         CommandData command = new CommandData();
         command.commandName = LOG_IN;
         command.sender = login;
-        return gson.toJson(command).getBytes(Charset.forName("UTF-8"));
+        return gson.toJson(command).getBytes(UTF8);
     }
 
     private String requestUserInput(String userMessage) {

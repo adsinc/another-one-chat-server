@@ -187,7 +187,7 @@ public class ChatClient {
 
     private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) throws ClientException {
         String msg = requestUserInput("Enter command 'sendToAll#[message]', 'getServerTime#', " +
-                "sendToUser#[userLogin]#[message]");
+                "'sendToUser#[userLogin]#[message]'");
         byte[] data = commandDataManager.createCommandData(attachment.login, msg);
         send(data, attachment, writeHandler);
     }

@@ -15,6 +15,10 @@ public class SendToAllCommandAction implements CommandAction {
     public void execute(CommandData commandData, ChatServer.Attachment attachment,
                         Map<String, AsynchronousSocketChannel> clients,
                         BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
-        sendAnswerFn.apply(createReplyOk("ok"), attachment.client);
+
+        ServerReply serverReply = createReplyOk(commandData.message);
+        serverReply.sender = commandData.sender;
+
+        clients.values().stream().forEach(client -> sendAnswerFn.apply(serverReply, client));
     }
 }

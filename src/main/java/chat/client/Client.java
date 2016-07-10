@@ -85,7 +85,7 @@ public class Client {
             String msg = requestUserInput("Enter command:");
 
             attachment.buffer.clear();
-            data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
+            data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
             attachment.buffer.put(data);
             attachment.buffer.flip();
             attachment.isRead = false;
@@ -110,7 +110,7 @@ public class Client {
                     ServerReply.class);
 
             if (reply != null) {
-                System.out.println("Server response: " + reply.message);
+                System.out.println("Server response: " + reply.sender + " > " + reply.message);
                 if (reply.failed) {
                     attachment.mainThread.interrupt();
                 }
@@ -132,7 +132,7 @@ public class Client {
         public void completed(Integer result, Attachment attachment) {
             String msg = requestUserInput("Enter command:");
             attachment.buffer.clear();
-            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToUserCommand(msg);
+            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
             attachment.buffer.put(data);
             attachment.buffer.flip();
             attachment.isRead = false;

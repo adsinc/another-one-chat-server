@@ -14,11 +14,19 @@ public class SendToAllCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData, ChatServer.Attachment attachment,
                         Map<String, ChatServer.Attachment> clients,
-                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
+                        BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn) {
 
         ServerReply serverReply = createReplyOk(commandData.message);
         serverReply.sender = commandData.sender;
 
-        clients.values().stream().forEach(att -> att.replyFn.apply(serverReply, att.client));
+        sendAnswerFn.apply(serverReply, attachment.client);
+
+        if (clients.get(commandData.sender).equals(attachment)) {
+            clients.forEach((login, att) -> {
+                if (!login.equals(commandData.sender)) {
+                    att.replyFn.apply(commandData, att.client);
+                }
+            });
+        }
     }
 }

@@ -1,7 +1,6 @@
 package chat.server.commands;
 
 import chat.common.data.CommandData;
-import chat.common.data.ServerReply;
 import chat.server.ChatServer;
 
 import java.nio.channels.AsynchronousSocketChannel;
@@ -18,7 +17,7 @@ public class LogInCommandAction implements CommandAction {
     @Override
     public void execute(CommandData cmd, ChatServer.Attachment attachment,
                         Map<String, ChatServer.Attachment> clients,
-                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
+                        BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn) {
         if (attachment.loggedId) {
             createReplyFailed("ChatClient already logged");
         } else {

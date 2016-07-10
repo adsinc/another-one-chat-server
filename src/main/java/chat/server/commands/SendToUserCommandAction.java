@@ -14,7 +14,7 @@ public class SendToUserCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData,
                         ChatServer.Attachment attachment, Map<String, ChatServer.Attachment> clients,
-                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
+                        BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn) {
 
         String receiver = commandData.receiver;
         if (receiver == null || receiver.isEmpty()) {
@@ -29,7 +29,10 @@ public class SendToUserCommandAction implements CommandAction {
 
         ServerReply serverReply = createReplyOk(commandData.message);
         serverReply.sender = commandData.sender;
-        sendAnswerFn.apply(serverReply, clients.get(receiver).client);
+
+        ChatServer.Attachment receiverAtt = clients.get(receiver);
+        receiverAtt.replyFn.apply(serverReply, receiverAtt.client);
+
         sendAnswerFn.apply(serverReply, attachment.client);
     }
 }

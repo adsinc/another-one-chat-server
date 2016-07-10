@@ -1,7 +1,6 @@
 package chat.server.commands;
 
 import chat.common.data.CommandData;
-import chat.common.data.ServerReply;
 import chat.server.ChatServer;
 
 import java.nio.channels.AsynchronousSocketChannel;
@@ -15,7 +14,7 @@ public class GetServerTimeCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData, ChatServer.Attachment attachment,
                         Map<String, ChatServer.Attachment> clients,
-                        BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn) {
+                        BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn) {
         sendAnswerFn.apply(createReplyOk("Server time: " + LocalDateTime.now().toString()), attachment.client);
     }
 }

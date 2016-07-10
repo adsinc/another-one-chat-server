@@ -1,7 +1,6 @@
 package chat.server.commands;
 
 import chat.common.data.CommandData;
-import chat.common.data.ServerReply;
 import chat.server.ChatServer;
 
 import java.nio.channels.AsynchronousSocketChannel;
@@ -14,5 +13,5 @@ import java.util.function.BiFunction;
 public interface CommandAction {
     void execute(CommandData commandData, ChatServer.Attachment attachment,
                  Map<String, ChatServer.Attachment> clients,
-                 BiFunction<ServerReply, AsynchronousSocketChannel, Void> sendAnswerFn);
+                 BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn);
 }

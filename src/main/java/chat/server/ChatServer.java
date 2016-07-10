@@ -1,7 +1,6 @@
 package chat.server;
 
 import chat.common.data.CommandData;
-import chat.common.data.ServerReply;
 import chat.server.commands.CommandAction;
 import chat.server.commands.CommandManager;
 import chat.server.commands.LogInCommandAction;
@@ -76,7 +75,7 @@ public class ChatServer {
 
     private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
 
-        private BiFunction<ServerReply, AsynchronousSocketChannel, Void> createReplyFn(Attachment attachment) {
+        private BiFunction<Object, AsynchronousSocketChannel, Void> createReplyFn(Attachment attachment) {
             return (serverReply, client) -> {
                 attachment.buffer.clear();
                 attachment.buffer.put(gson.toJson(serverReply).getBytes(Charset.forName("UTF-8")));
@@ -160,7 +159,7 @@ public class ChatServer {
         public StringBuilder readSb;
         public boolean isRead;
         public boolean loggedId;
-        public BiFunction<ServerReply, AsynchronousSocketChannel, Void> replyFn;
+        public BiFunction<Object, AsynchronousSocketChannel, Void> replyFn;
     }
 }
 

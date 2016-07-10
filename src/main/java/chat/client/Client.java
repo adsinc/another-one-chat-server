@@ -38,14 +38,13 @@ public class Client {
 
             Attachment attachment = new Attachment();
             attachment.channel = channel;
-            attachment.buffer = ByteBuffer.allocate(BUFFER_SIZE);
             attachment.mainThread = Thread.currentThread();
 
             send(createLogInCommand(requestUserInput("Enter login")), attachment, new LogInHandler());
 
             attachment.mainThread.join();
         } catch (IOException | ExecutionException e) {
-            e.printStackTrace();
+            System.err.println("Connection to server failed");
         } catch (InterruptedException e) {
             System.out.println("Connection closed");
         }
@@ -70,16 +69,10 @@ public class Client {
                 attachment.mainThread.interrupt();
             }
 
-            Attachment readAttachment = new Attachment();
-            readAttachment.buffer = ByteBuffer.allocate(BUFFER_SIZE);
-            readAttachment.channel = attachment.channel;
-            readAttachment.mainThread = attachment.mainThread;
-            attachment.channel.read(attachment.buffer, readAttachment, new ReadHandler());
+            Attachment readAttachment = new Attachment(attachment);
+            attachment.channel.read(readAttachment.buffer, readAttachment, new ReadHandler());
 
-            String msg = requestUserInput("Enter command:");
-
-            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
-            send(data, attachment, new WriteHandler());
+            getAndSendUserInput(attachment, new WriteHandler());
         }
 
         @Override
@@ -113,9 +106,7 @@ public class Client {
     private class WriteHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            String msg = requestUserInput("Enter command:");
-            byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
-            send(data, attachment, this);
+            getAndSendUserInput(attachment, this);
         }
 
         @Override
@@ -125,8 +116,16 @@ public class Client {
     }
 
     private class Attachment {
+        Attachment() {
+        }
+
+        Attachment(Attachment src) {
+            channel = src.channel;
+            mainThread = src.mainThread;
+        }
+
         AsynchronousSocketChannel channel;
-        ByteBuffer buffer;
+        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         Thread mainThread;
     }
 
@@ -186,6 +185,12 @@ public class Client {
             e.printStackTrace();
         }
         return "";
+    }
+
+    private void getAndSendUserInput(Attachment attachment, WriteHandler writeHandler) {
+        String msg = requestUserInput("Enter command:");
+        byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
+        send(data, attachment, writeHandler);
     }
 
 }

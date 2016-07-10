@@ -21,7 +21,7 @@ import static chat.common.data.CommandType.*;
  * todo
  */
 public class Client {
-
+    private final static int BUFFER_SIZE = 1024;
     private final static Charset UTF8 = Charset.forName("UTF-8");
     private final Gson gson = new Gson();
 
@@ -38,13 +38,11 @@ public class Client {
 
             Attachment attachment = new Attachment();
             attachment.channel = channel;
-            attachment.buffer = ByteBuffer.allocate(1024);
+            attachment.buffer = ByteBuffer.allocate(BUFFER_SIZE);
             attachment.mainThread = Thread.currentThread();
 
-            attachment.buffer.put(createLogInCommand(requestUserInput("Enter login")));
-            attachment.buffer.flip();
+            send(createLogInCommand(requestUserInput("Enter login")), attachment, new LogInHandler());
 
-            channel.write(attachment.buffer, attachment, new LogInHandler());
             attachment.mainThread.join();
         } catch (IOException | ExecutionException e) {
             e.printStackTrace();
@@ -56,7 +54,6 @@ public class Client {
     private class LogInHandler implements CompletionHandler<Integer, Attachment> {
         @Override
         public void completed(Integer result, Attachment attachment) {
-            attachment.isRead = true;
             attachment.buffer.clear();
             try {
                 attachment.channel.read(attachment.buffer).get();
@@ -74,19 +71,15 @@ public class Client {
             }
 
             Attachment readAttachment = new Attachment();
-            readAttachment.buffer = ByteBuffer.allocate(1024);
+            readAttachment.buffer = ByteBuffer.allocate(BUFFER_SIZE);
             readAttachment.channel = attachment.channel;
             readAttachment.mainThread = attachment.mainThread;
             attachment.channel.read(attachment.buffer, readAttachment, new ReadHandler());
 
             String msg = requestUserInput("Enter command:");
 
-            attachment.buffer.clear();
             byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
-            attachment.buffer.put(data);
-            attachment.buffer.flip();
-            attachment.isRead = false;
-            attachment.channel.write(attachment.buffer, attachment, new WriteHandler());
+            send(data, attachment, new WriteHandler());
         }
 
         @Override
@@ -94,18 +87,6 @@ public class Client {
             exc.printStackTrace();
         }
     }
-
-    private String readString(ByteBuffer buffer) {
-        buffer.flip();
-        int limit = buffer.limit();
-        byte[] data = new byte[limit];
-        buffer.get(data, 0, limit);
-        return new String(data, UTF8);
-    }
-
-//    private String toJson() {
-//
-//    }
 
     private class ReadHandler implements CompletionHandler<Integer, Attachment> {
         @Override
@@ -134,12 +115,8 @@ public class Client {
         @Override
         public void completed(Integer result, Attachment attachment) {
             String msg = requestUserInput("Enter command:");
-            attachment.buffer.clear();
             byte[] data = msg.isEmpty() ? createGetServerTimeCommand() : createSendToAllCommand(msg);
-            attachment.buffer.put(data);
-            attachment.buffer.flip();
-            attachment.isRead = false;
-            attachment.channel.write(attachment.buffer, attachment, this);
+            send(data, attachment, this);
         }
 
         @Override
@@ -148,12 +125,27 @@ public class Client {
         }
     }
 
-    static class Attachment {
+    private class Attachment {
         AsynchronousSocketChannel channel;
         ByteBuffer buffer;
         Thread mainThread;
-        boolean isRead;
     }
+
+    private String readString(ByteBuffer buffer) {
+        buffer.flip();
+        int limit = buffer.limit();
+        byte[] data = new byte[limit];
+        buffer.get(data, 0, limit);
+        return new String(data, UTF8);
+    }
+
+    private void send(byte[] data, Attachment attachment, CompletionHandler<Integer, Attachment> handler) {
+        attachment.buffer.clear();
+        attachment.buffer.put(data);
+        attachment.buffer.flip();
+        attachment.channel.write(attachment.buffer, attachment, handler);
+    }
+
 
     private byte[] createSendToAllCommand(String msg) {
         CommandData command = new CommandData();

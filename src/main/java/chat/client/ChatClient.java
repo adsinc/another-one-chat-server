@@ -17,7 +17,7 @@ import static chat.client.commands.CommandDataManager.CMD_DELIMITER;
 import static chat.client.commands.CommandType.LOG_IN;
 
 /**
- * todo
+ * Main chat client bean
  */
 public class ChatClient {
     private final static int BUFFER_SIZE = 1024;
@@ -147,7 +147,7 @@ public class ChatClient {
         try {
             return reader.readLine();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Read input IO error: " + e.getMessage());
         }
         return "";
     }

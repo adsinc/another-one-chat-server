@@ -41,8 +41,7 @@ public class ChatClient {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 String input = requestUserInput(">");
-                commandDataManager.createCommandData(login, input);
-                message = input.getBytes();
+                message = commandDataManager.createCommandData(login, input);
                 channel.register(selector, SelectionKey.OP_WRITE);
             } catch (ClosedChannelException e) {
                 Thread.currentThread().interrupt();

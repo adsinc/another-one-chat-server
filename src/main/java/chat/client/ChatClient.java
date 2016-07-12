@@ -135,7 +135,6 @@ public class ChatClient {
     }
 
     private void write(SelectionKey key) throws IOException {
-        System.out.println("WTINTING..........");
         SocketChannel channel = (SocketChannel) key.channel();
         channel.write(ByteBuffer.wrap(message));
         message = null;

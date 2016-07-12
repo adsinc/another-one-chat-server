@@ -12,6 +12,7 @@
     <bean id="chatClient" class="chat.client.ChatClient">
         <property name="host" value="localhost"/>
         <property name="port" value="7777"/>
+        <property name="timeout" value="10000"/>
     </bean>
 
     <bean class="chat.client.commands.CommandDataManager"/>

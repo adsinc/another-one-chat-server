@@ -17,6 +17,8 @@ import java.util.Objects;
  */
 public class ChatServer {
 
+    private final static int BUFFER_SIZE = 1024;
+
     private Integer port;
     private long timeout;
 
@@ -117,7 +119,7 @@ public class ChatServer {
 
     private void read(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         int readLength;
         try {
             readLength = client.read(buffer);

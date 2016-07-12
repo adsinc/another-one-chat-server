@@ -1,165 +1,152 @@
 package chat.server;
 
-import chat.common.data.CommandData;
-import chat.server.commands.CommandAction;
-import chat.server.commands.CommandManager;
-import chat.server.commands.LogInCommandAction;
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
-import java.nio.charset.Charset;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
-
-import static chat.common.data.ServerReply.createReplyFailed;
+import java.util.Objects;
 
 /**
- * todo
+ *
  */
 public class ChatServer {
 
-    @Autowired
-    private CommandManager commandManager;
-    private int port;
-    private final Map<String, Attachment> connections = new ConcurrentHashMap<>();
-    private final Gson gson = new Gson();
+    private Integer port;
+    private long timeout;
 
-    public void setPort(int port) {
+    private Selector selector;
+    private ServerSocketChannel serverChannel;
+    private Map<SocketChannel, byte[]> clientsMessages = new HashMap<>();
+
+    public void setPort(Integer port) {
         this.port = port;
     }
 
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
     public void start() {
-        System.out.println("Server started");
-        SocketAddress address = new InetSocketAddress(port);
-        try (AsynchronousServerSocketChannel server = AsynchronousServerSocketChannel.open()) {
-            server.bind(address);
-            Attachment attachment = new Attachment();
-            attachment.server = server;
-            server.accept(attachment, new ConnectionHandler());
-            Thread.currentThread().join();
+        Objects.requireNonNull(port, "Port is not defined");
+        try {
+            selector = Selector.open();
+            serverChannel = ServerSocketChannel.open();
+            serverChannel.configureBlocking(false);
+            serverChannel.socket().bind(new InetSocketAddress(port));
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            acceptConnections();
         } catch (IOException e) {
-            //todo
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            //todo
-            e.printStackTrace();
+            System.err.println("Server can not be started: " + e.getMessage());
         }
     }
 
-    private class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Attachment> {
-        @Override
-        public void completed(AsynchronousSocketChannel client, Attachment attachment) {
-            attachment.server.accept(attachment, this);
-            Attachment newAttachment = new Attachment();
-            newAttachment.client = client;
-            newAttachment.buffer = ByteBuffer.allocate(1024);
-            newAttachment.readSb = new StringBuilder();
-            newAttachment.isRead = true;
-            client.read(newAttachment.buffer, newAttachment, new ReadWriteHandler());
-        }
+    private void acceptConnections() {
+        System.out.println("Listening port " + port);
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                selector.select(timeout);
+                Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
 
-        @Override
-        public void failed(Throwable exc, Attachment attachment) {
-            //todo
-        }
-    }
+                while (keys.hasNext()) {
+                    SelectionKey key = keys.next();
+                    keys.remove();
 
-    private class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+                    if (!key.isValid()) {
+                        continue;
+                    }
 
-        private BiFunction<Object, AsynchronousSocketChannel, Void> createReplyFn(Attachment attachment) {
-            return (serverReply, client) -> {
-                attachment.buffer.clear();
-                attachment.buffer.put(gson.toJson(serverReply).getBytes(Charset.forName("UTF-8")));
-                attachment.buffer.flip();
-                client.write(attachment.buffer, attachment, ReadWriteHandler.this);
-                return null;
-            };
-        }
+                    if (key.isAcceptable()) {
+                        System.out.println("Accepting new connection");
+                        accept(key);
+                    }
 
-        @Override
-        public void completed(Integer result, Attachment attachment) {
-            if (result == -1) {
-                try {
-                    attachment.client.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-                return;
-            }
+                    if (key.isWritable()) {
+                        System.out.println("Write");
+                        write(key);
+                    }
 
-            if (attachment.isRead) {
-                ByteBuffer buffer = attachment.buffer;
-                buffer.flip();
-                int limit = buffer.limit();
-                byte[] data = new byte[limit];
-                buffer.get(data, 0, limit);
-                attachment.readSb.append(new String(data, Charset.forName("UTF-8")));
-                attachment.buffer.rewind();
-
-                if (result == buffer.capacity()) {
-                    attachment.client.read(attachment.buffer, attachment, this);
-                } else {
-                    attachment.isRead = false;
-                    System.out.println("Received: " + attachment.readSb);
-                    try {
-                        CommandData cmd = commandManager.parseCommand(attachment.readSb.toString());
-                        System.out.println(commandManager.validate(cmd));
-
-                        CommandAction action = commandManager.getCommandAction(cmd);
-
-                        if (attachment.replyFn == null) {
-                            attachment.replyFn = createReplyFn(attachment);
-                        }
-
-                        if (!attachment.loggedId && !(action instanceof LogInCommandAction))
-                            attachment.replyFn.apply(createReplyFailed("ChatClient is not logged in"), attachment.client);
-                        else action.execute(cmd, attachment, connections, attachment.replyFn);
-
-                    } catch (JsonParseException e) {
-                        System.out.println("Can not parse command");
-                    } finally {
-                        attachment.readSb.setLength(0);
+                    if (key.isReadable()) {
+                        System.out.println("Read");
+                        read(key);
                     }
                 }
-            } else {
-                attachment.isRead = true;
-                attachment.buffer.clear();
-                if (!attachment.loggedId) {
-                    try {
-                        connections.values().remove(attachment);
-                        attachment.client.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    attachment.client.read(attachment.buffer, attachment, this);
-                }
             }
-        }
-
-        @Override
-        public void failed(Throwable exc, Attachment attachment) {
-            //todo
+        } catch (IOException e) {
+            System.err.println("Internal server IO error: " + e.getMessage());
+        } finally {
+            closeConnection();
         }
     }
 
-    public static class Attachment {
-        public AsynchronousServerSocketChannel server;
-        public AsynchronousSocketChannel client;
-        public ByteBuffer buffer;
-        public StringBuilder readSb;
-        public boolean isRead;
-        public boolean loggedId;
-        public BiFunction<Object, AsynchronousSocketChannel, Void> replyFn;
+    private void closeConnection() {
+        System.out.println("Closing connections");
+        if (selector != null) {
+            try {
+                selector.close();
+                serverChannel.socket().close();
+                serverChannel.close();
+            } catch (IOException e) {
+                System.err.println("Error on connection closing: " + e.getMessage());
+            }
+        }
+    }
+
+    private void accept(SelectionKey key) throws IOException {
+        ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
+        SocketChannel clientChannel = serverChannel.accept();
+        clientChannel.configureBlocking(false);
+        clientChannel.register(selector, SelectionKey.OP_WRITE);
+        // todo auth
+        byte[] msg = "Logged as Troll".getBytes();
+        clientsMessages.put(clientChannel, msg);
+    }
+
+    private void write(SelectionKey key) throws IOException {
+        SocketChannel client = (SocketChannel) key.channel();
+        byte[] msg = clientsMessages.remove(client);
+        client.write(ByteBuffer.wrap(msg));
+        // todo intesting place maybe dont do it
+        key.interestOps(SelectionKey.OP_READ);
+    }
+
+    private void read(SelectionKey key) throws IOException {
+        SocketChannel client = (SocketChannel) key.channel();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        int readLength;
+        try {
+            readLength = client.read(buffer);
+        } catch (IOException e) {
+            System.err.println("Error on reading data from channel. Connection closed");
+            key.cancel();
+            client.close();
+            return;
+        }
+        // todo think where
+        if (readLength == -1) {
+            System.out.println("Nothing was there to be read, closing connection");
+            client.close();
+            key.cancel();
+            return;
+        }
+
+        buffer.flip();
+        byte[] data = new byte[readLength];
+        buffer.get(data, 0, readLength);
+        System.out.println("Received: " + new String(data));
+
+        //todo this place!
+        echo(key, data);
+    }
+
+    private void echo(SelectionKey key, byte[] data) {
+        SocketChannel socketChannel = (SocketChannel) key.channel();
+        clientsMessages.put(socketChannel, data);
+        key.interestOps(SelectionKey.OP_WRITE);
     }
 }
-

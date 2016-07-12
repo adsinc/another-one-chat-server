@@ -9,6 +9,7 @@
 
     <bean id="chatServer" class="chat.server.ChatServer">
         <property name="port" value="7777"/>
+        <property name="timeout" value="10000"/>
     </bean>
 
     <context:annotation-config/>

@@ -28,6 +28,7 @@ public class ChatClient {
     private long timeout;
     private Selector selector;
     private SocketChannel channel;
+    private String login;
 
     @Autowired
     private CommandDataManager commandDataManager;
@@ -40,10 +41,13 @@ public class ChatClient {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 String input = requestUserInput(">");
+                commandDataManager.createCommandData(login, input);
                 message = input.getBytes();
                 channel.register(selector, SelectionKey.OP_WRITE);
             } catch (ClosedChannelException e) {
                 Thread.currentThread().interrupt();
+            } catch (ClientException e) {
+                System.out.println(e.getMessage());
             }
         }
     });
@@ -61,7 +65,7 @@ public class ChatClient {
     }
 
     public void start() {
-        String login = requestUserInput("Enter login\n>");
+        login = requestUserInput("Enter login\n>");
         try {
             channel = SocketChannel.open();
             channel.configureBlocking(false);

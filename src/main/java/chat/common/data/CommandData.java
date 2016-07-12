@@ -1,7 +1,7 @@
 package chat.common.data;
 
 /**
- *
+ * Client command data.
  */
 public class CommandData {
     public String commandName;

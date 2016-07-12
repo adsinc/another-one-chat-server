@@ -1,7 +1,7 @@
 package chat.common.data;
 
 /**
- *
+ * Server reply data
  */
 public class ServerReply {
     public String sender;

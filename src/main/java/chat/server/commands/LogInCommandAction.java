@@ -1,9 +1,9 @@
 package chat.server.commands;
 
 import chat.common.data.CommandData;
-import chat.server.ChatServer;
+import chat.common.data.ServerReply;
 
-import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -11,19 +11,18 @@ import static chat.common.data.ServerReply.createReplyFailed;
 import static chat.common.data.ServerReply.createReplyOk;
 
 /**
- *
+ * Log in action
  */
 public class LogInCommandAction implements CommandAction {
     @Override
-    public void execute(CommandData cmd, ChatServer.Attachment attachment,
-                        Map<String, ChatServer.Attachment> clients,
-                        BiFunction<Object, AsynchronousSocketChannel, Void> sendAnswerFn) {
-        if (attachment.loggedId) {
+    public void execute(CommandData cmd,
+                        SocketChannel client, Map<String, SocketChannel> loginToClient,
+                        BiFunction<SocketChannel, ServerReply, Void> replyCallBack) {
+        if (loginToClient.containsKey(cmd.sender)) {
             createReplyFailed("ChatClient already logged");
         } else {
-            attachment.loggedId = true;
-            clients.put(cmd.sender, attachment);
-            sendAnswerFn.apply(createReplyOk("Logged as: " + cmd.sender), attachment.client);
+            loginToClient.put(cmd.sender, client);
+            replyCallBack.apply(client, createReplyOk("Logged as: " + cmd.sender));
         }
     }
 }

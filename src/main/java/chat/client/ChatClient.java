@@ -156,7 +156,7 @@ public class ChatClient {
         }
         //todo think!
         if (readLength == -1) {
-            System.err.println("Nothing was read from server.");
+            System.err.println("Nothing to read from server.");
             channel.close();
             key.cancel();
             return;

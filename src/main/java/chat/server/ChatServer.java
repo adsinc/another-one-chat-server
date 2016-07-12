@@ -5,6 +5,7 @@ import chat.common.data.ServerReply;
 import chat.server.commands.CommandAction;
 import chat.server.commands.CommandManager;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -155,13 +156,16 @@ public class ChatServer {
         String json = new String(data, Charset.forName("UTF-8"));
         System.out.println("Received: " + json);
 
-        CommandData commandData = commandManager.parseCommand(json);
-
-        if (commandManager.validate(commandData)) {
-            CommandAction commandAction = commandManager.getCommandAction(commandData);
-            commandAction.execute(commandData, client, loginToClient, this::send);
-        } else {
-            send(client, ServerReply.createReplyFailed("Incorrect command: '" + json + "'"));
+        try {
+            CommandData commandData = commandManager.parseCommand(json);
+            if (commandManager.validate(commandData)) {
+                CommandAction commandAction = commandManager.getCommandAction(commandData);
+                commandAction.execute(commandData, client, loginToClient, this::send);
+            } else {
+                send(client, ServerReply.createReplyFailed("Incorrect command: '" + json + "'"));
+            }
+        } catch (JsonParseException e) {
+            System.err.println("Cat not parse command '" + json + "'");
         }
     }
 

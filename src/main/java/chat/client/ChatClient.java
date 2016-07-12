@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -26,11 +27,24 @@ public class ChatClient {
     private int port;
     private long timeout;
     private Selector selector;
+    private SocketChannel channel;
 
     @Autowired
     private CommandDataManager commandDataManager;
 
-    private byte[] message;
+    private volatile byte[] message;
+
+    private final Thread inputReader = new Thread(() -> {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                String input = requestUserInput(">");
+                message = input.getBytes();
+                channel.register(selector, SelectionKey.OP_WRITE);
+            } catch (ClosedChannelException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    });
 
     public void setHost(String host) {
         this.host = host;
@@ -45,9 +59,9 @@ public class ChatClient {
     }
 
     public void start() {
-        String login = requestUserInput("Enter login");
+        String login = requestUserInput("Enter login\n>");
         try {
-            SocketChannel channel = SocketChannel.open();
+            channel = SocketChannel.open();
             channel.configureBlocking(false);
             selector = Selector.open();
 
@@ -91,6 +105,12 @@ public class ChatClient {
             } catch (IOException e) {
                 System.err.println("Error on closing selector: " + e.getMessage());
             }
+            try {
+                inputReader.interrupt();
+                inputReader.join();
+            } catch (InterruptedException e) {
+                System.err.println("Error on inputReader stream interrupt: " + e.getMessage());
+            }
         }
     }
 
@@ -106,6 +126,7 @@ public class ChatClient {
         channel.configureBlocking(false);
         sendMsg(commandDataManager.createCommandData(null, LOG_IN + CMD_DELIMITER + login));
         channel.register(selector, SelectionKey.OP_WRITE);
+        inputReader.start();
     }
 
     private void write(SelectionKey key) throws IOException {
@@ -142,7 +163,7 @@ public class ChatClient {
     }
 
     private String requestUserInput(String userMessage) {
-        System.out.println(userMessage);
+        System.out.print(userMessage);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
             return reader.readLine();

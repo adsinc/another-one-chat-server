@@ -35,14 +35,16 @@ public class ChatClient {
 
     private volatile byte[] message;
 
+    /**
+     * Thread for nonblocking user input reading
+     */
     private final Thread inputReader = new Thread(() -> {
         System.out.println("Command formats: 'sendToAll#[message]', 'getServerTime#', " +
                 "'sendToUser#[userLogin]#[message]'");
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 String input = requestUserInput(">");
-                message = commandDataManager.createCommandData(login, input);
-                channel.register(selector, SelectionKey.OP_WRITE);
+                requestWrite(commandDataManager.createCommandData(login, input), channel);
             } catch (ClosedChannelException e) {
                 Thread.currentThread().interrupt();
             } catch (ClientException e) {
@@ -63,6 +65,9 @@ public class ChatClient {
         this.timeout = timeout;
     }
 
+    /**
+     * Starting server
+     */
     public void start() {
         login = requestUserInput("Enter login\n>");
         try {
@@ -84,16 +89,13 @@ public class ChatClient {
                         if (!key.isValid()) {
                             continue;
                         }
-
                         if (key.isConnectable()) {
                             System.out.println("Connected to server");
                             connect(key, login);
                         }
-
                         if (key.isWritable()) {
                             write(key);
                         }
-
                         if (key.isReadable()) {
                             read(key);
                         }
@@ -119,8 +121,9 @@ public class ChatClient {
         }
     }
 
-    private void sendMsg(byte[] msgData) {
+    private void requestWrite(byte[] msgData, SocketChannel channel) throws ClosedChannelException {
         message = msgData;
+        channel.register(selector, SelectionKey.OP_WRITE);
     }
 
     private void connect(SelectionKey key, String login) throws IOException, ClientException {
@@ -129,8 +132,7 @@ public class ChatClient {
             channel.finishConnect();
         }
         channel.configureBlocking(false);
-        sendMsg(commandDataManager.createCommandData(null, LOG_IN + CMD_DELIMITER + login));
-        channel.register(selector, SelectionKey.OP_WRITE);
+        requestWrite(commandDataManager.createCommandData(null, LOG_IN + CMD_DELIMITER + login), channel);
         inputReader.start();
     }
 
@@ -154,7 +156,6 @@ public class ChatClient {
             channel.close();
             return;
         }
-        //todo think!
         if (readLength == -1) {
             System.err.println("Nothing to read from server.");
             channel.close();

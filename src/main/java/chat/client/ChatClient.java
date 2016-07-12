@@ -35,6 +35,8 @@ public class ChatClient {
     private volatile byte[] message;
 
     private final Thread inputReader = new Thread(() -> {
+        System.out.println("Command formats: 'sendToAll#[message]', 'getServerTime#', " +
+                "'sendToUser#[userLogin]#[message]'");
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 String input = requestUserInput(">");

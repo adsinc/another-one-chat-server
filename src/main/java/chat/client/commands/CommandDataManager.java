@@ -9,18 +9,34 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.nio.charset.Charset;
 
+/**
+ * Bean help to create byte array from user input commands.
+ */
 public class CommandDataManager implements BeanFactoryAware {
     public final static String CMD_DELIMITER = "#";
     private final static Charset UTF8 = Charset.forName("UTF-8");
     private final Gson gson = new Gson();
     private ConfigurableListableBeanFactory factory;
 
+    /**
+     * Parse user input and create byte array representation of CommandData object
+     *
+     * @param sender    sender login
+     * @param userInput command from user
+     * @return byte array representation of CommandData object
+     */
     public byte[] createCommandData(String sender, String userInput) throws ClientException {
         CommandType commandType = extractCommandType(userInput);
         String message = userInput.substring((commandType.getName() + CMD_DELIMITER).length());
         return gson.toJson(commandType.createCommandData(sender, message)).getBytes(UTF8);
     }
 
+    /**
+     * Parse user input and extract CommandType
+     *
+     * @param userInput command from user
+     * @return appropriate to user input CommandType object
+     */
     private CommandType extractCommandType(String userInput) throws ClientException {
         if (!userInput.contains(CMD_DELIMITER))
             throw new ClientException("Incorrect command format.");

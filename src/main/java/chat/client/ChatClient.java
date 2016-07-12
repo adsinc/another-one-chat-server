@@ -1,12 +1,20 @@
 package chat.client;
 
+import chat.client.commands.CommandDataManager;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+
+import static chat.client.commands.CommandDataManager.CMD_DELIMITER;
+import static chat.client.commands.CommandType.LOG_IN;
 
 /**
  * todo
@@ -18,6 +26,11 @@ public class ChatClient {
     private int port;
     private long timeout;
     private Selector selector;
+
+    @Autowired
+    private CommandDataManager commandDataManager;
+
+    private byte[] message;
 
     public void setHost(String host) {
         this.host = host;
@@ -32,6 +45,7 @@ public class ChatClient {
     }
 
     public void start() {
+        String login = requestUserInput("Enter login");
         try {
             SocketChannel channel = SocketChannel.open();
             channel.configureBlocking(false);
@@ -44,24 +58,28 @@ public class ChatClient {
                 selector.select(timeout);
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
                 while (keys.hasNext()) {
-                    SelectionKey key = keys.next();
-                    keys.remove();
+                    try {
+                        SelectionKey key = keys.next();
+                        keys.remove();
 
-                    if (!key.isValid()) {
-                        continue;
-                    }
+                        if (!key.isValid()) {
+                            continue;
+                        }
 
-                    if (key.isConnectable()) {
-                        System.out.println("Connected to server");
-                        connect(key);
-                    }
+                        if (key.isConnectable()) {
+                            System.out.println("Connected to server");
+                            connect(key, login);
+                        }
 
-                    if (key.isWritable()) {
-                        write(key);
-                    }
+                        if (key.isWritable()) {
+                            write(key);
+                        }
 
-                    if (key.isReadable()) {
-                        read(key);
+                        if (key.isReadable()) {
+                            read(key);
+                        }
+                    } catch (ClientException e) {
+                        System.err.println(e.getMessage());
                     }
                 }
             }
@@ -76,20 +94,24 @@ public class ChatClient {
         }
     }
 
-    private void connect(SelectionKey key) throws IOException {
+    private void sendMsg(byte[] msgData) {
+        message = msgData;
+    }
+
+    private void connect(SelectionKey key, String login) throws IOException, ClientException {
         SocketChannel channel = (SocketChannel) key.channel();
         if (channel.isConnectionPending()) {
             channel.finishConnect();
         }
         channel.configureBlocking(false);
-        // todo log in?
+        sendMsg(commandDataManager.createCommandData(null, LOG_IN + CMD_DELIMITER + login));
         channel.register(selector, SelectionKey.OP_WRITE);
     }
 
     private void write(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
-        // todo fix it
-        channel.write(ByteBuffer.wrap("message to server".getBytes()));
+        channel.write(ByteBuffer.wrap(message));
+        message = null;
         key.interestOps(SelectionKey.OP_READ);
     }
 
@@ -118,4 +140,16 @@ public class ChatClient {
         buffer.get(buff, 0, readLength);
         System.out.println("Server said: " + new String(buff));
     }
+
+    private String requestUserInput(String userMessage) {
+        System.out.println(userMessage);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
 }

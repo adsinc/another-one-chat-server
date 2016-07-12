@@ -4,7 +4,7 @@ import chat.client.ClientException;
 import chat.common.data.CommandData;
 
 /**
- *
+ * Command to log in.
  */
 public class LogInCommandType implements CommandType {
     @Override

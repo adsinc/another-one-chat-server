@@ -6,7 +6,7 @@ import chat.common.data.CommandData;
 import static chat.client.commands.CommandDataManager.CMD_DELIMITER;
 
 /**
- *
+ * Send message to user command
  */
 public class SendToUserCommandType implements CommandType {
     @Override

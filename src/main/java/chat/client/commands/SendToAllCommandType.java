@@ -4,7 +4,7 @@ import chat.client.ClientException;
 import chat.common.data.CommandData;
 
 /**
- *
+ * Send message to all connected users command
  */
 public class SendToAllCommandType implements CommandType {
     @Override

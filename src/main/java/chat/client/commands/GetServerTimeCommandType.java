@@ -3,7 +3,7 @@ package chat.client.commands;
 import chat.common.data.CommandData;
 
 /**
- *
+ * Command to get time from server.
  */
 public class GetServerTimeCommandType implements CommandType {
     @Override

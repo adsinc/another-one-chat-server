@@ -7,29 +7,29 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static chat.common.data.ServerReply.createReplyOk;
+
 public class SendToUserCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData,
                         SocketChannel client, Map<String, SocketChannel> loginToClient,
                         BiFunction<SocketChannel, ServerReply, Void> replyCallBack) {
 
-//        String receiver = commandData.receiver;
-//        if (receiver == null || receiver.isEmpty()) {
-//            replyCallBack.apply(createReplyOk("Message receiver not defined"), attachment.client);
-//            return;
-//        }
-//        if (!loginToClient.containsKey(receiver)) {
-//            replyCallBack.apply(createReplyOk("User with login '" + receiver + "' is not connected"),
-//                    attachment.client);
-//            return;
-//        }
-//
-//        ServerReply serverReply = createReplyOk(commandData.message);
-//        serverReply.sender = commandData.sender;
-//
-//        ChatServerOld.Attachment receiverAtt = loginToClient.get(receiver);
-//        receiverAtt.replyFn.apply(serverReply, receiverAtt.client);
-//
-//        replyCallBack.apply(serverReply, attachment.client);
+        String receiver = commandData.receiver;
+        if (receiver == null || receiver.isEmpty()) {
+            replyCallBack.apply(client, createReplyOk("Message receiver not defined"));
+            return;
+        }
+        if (!loginToClient.containsKey(receiver)) {
+            replyCallBack.apply(client, createReplyOk("User with login '" + receiver + "' is not connected"));
+            return;
+        }
+
+        ServerReply serverReply = createReplyOk(commandData.message);
+        serverReply.sender = commandData.sender;
+
+        SocketChannel receiverChannel = loginToClient.get(receiver);
+        replyCallBack.apply(receiverChannel, serverReply);
+        replyCallBack.apply(client, serverReply);
     }
 }

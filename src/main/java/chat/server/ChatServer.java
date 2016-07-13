@@ -166,7 +166,7 @@ public class ChatServer {
                 send(client, ServerReply.createReplyFailed("Incorrect command: '" + json + "'"));
             }
         } catch (JsonParseException e) {
-            System.err.println("Cat not parse command '" + json + "'");
+            System.err.println("Can not parse command '" + json + "'");
         }
     }
 

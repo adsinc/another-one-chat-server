@@ -24,7 +24,7 @@ public class SendToUserCommandType implements CommandType {
         command.commandName = SEND_TO_USER;
         command.sender = senderLogin;
         command.receiver = parts[0];
-        command.message = message;
+        command.message = parts[1];
         return command;
     }
 }

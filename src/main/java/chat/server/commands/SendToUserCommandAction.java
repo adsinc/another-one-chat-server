@@ -9,6 +9,9 @@ import java.util.function.BiFunction;
 
 import static chat.common.data.ServerReply.createReplyOk;
 
+/**
+ * Send message from sender to receiver client action
+ */
 public class SendToUserCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData,

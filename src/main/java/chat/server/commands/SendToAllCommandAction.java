@@ -10,7 +10,7 @@ import java.util.function.BiFunction;
 import static chat.common.data.ServerReply.createReplyOk;
 
 /**
- * Send message from sender to all connected clients action.
+ * Send message from sender to all connected clients action
  */
 public class SendToAllCommandAction implements CommandAction {
     @Override

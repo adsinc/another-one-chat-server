@@ -10,6 +10,9 @@ import java.util.function.BiFunction;
 
 import static chat.common.data.ServerReply.createReplyOk;
 
+/**
+ * Action return server time to sender client
+ */
 public class GetServerTimeCommandAction implements CommandAction {
     @Override
     public void execute(CommandData commandData,

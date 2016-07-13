@@ -7,6 +7,9 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+/**
+ * Bean helps to parse json data received from client and find appropriate command actions
+ */
 public class CommandManager implements BeanFactoryAware {
     private ConfigurableListableBeanFactory factory;
     private Gson parser = new Gson();

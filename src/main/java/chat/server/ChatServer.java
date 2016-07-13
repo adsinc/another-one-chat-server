@@ -159,6 +159,7 @@ public class ChatServer {
             CommandData commandData = commandManager.parseCommand(json);
             if (commandManager.validate(commandData)) {
                 CommandAction commandAction = commandManager.getCommandAction(commandData);
+                loginToClient.values().removeIf(channel -> !channel.isOpen());
                 commandAction.execute(commandData, client, loginToClient, this::send);
             } else {
                 send(client, ServerReply.createReplyFailed("Incorrect command: '" + json + "'"));

@@ -1,5 +1,6 @@
 package chat.server.commands;
 
+import chat.client.commands.CommandType;
 import chat.common.data.CommandData;
 import com.google.gson.JsonParseException;
 import org.junit.Test;
@@ -11,8 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(locations = "classpath:server-context.xml")
@@ -47,14 +47,24 @@ public class CommandManagerTest {
                 "\"receiver\": \"r\" \"incorrectField\": \"r\" }");
     }
 
+    /**
+     * Validate should return false in bean with name equals to commandName does not exists
+     */
     @Test
     public void testValidate() throws Exception {
-        assertTrue(false);
+        CommandData commandData = new CommandData();
+        commandData.commandName = "notExistBeanName";
+        assertFalse(commandManager.validate(commandData));
+        commandData.commandName = CommandType.SEND_TO_ALL;
+        assertTrue(commandManager.validate(commandData));
     }
 
     @Test
     public void testGetCommandAction() throws Exception {
-        assertTrue(false);
+        CommandData commandData = new CommandData();
+        commandData.commandName = CommandType.SEND_TO_USER;
+        CommandAction action = commandManager.getCommandAction(commandData);
+        assertEquals(action.getClass(), SendToUserCommandAction.class);
     }
 
 }

@@ -1,6 +1,8 @@
 package chat.client;
 
 import chat.client.commands.CommandDataManager;
+import chat.common.data.ServerReply;
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.BufferedReader;
@@ -12,6 +14,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 
 import static chat.client.commands.CommandDataManager.CMD_DELIMITER;
@@ -29,6 +32,8 @@ public class ChatClient {
     private Selector selector;
     private SocketChannel channel;
     private String login;
+    private final Gson gson = new Gson();
+    private final Charset UTF8 = Charset.forName("UTF-8");
 
     @Autowired
     private CommandDataManager commandDataManager;
@@ -165,7 +170,15 @@ public class ChatClient {
         buffer.flip();
         byte[] buff = new byte[readLength];
         buffer.get(buff, 0, readLength);
-        System.out.println("Server said: " + new String(buff));
+        String json = new String(buff, UTF8);
+        ServerReply serverReply = gson.fromJson(json, ServerReply.class);
+        if (serverReply.failed) {
+            System.err.println("Error. Client must be closed");
+        } else {
+            System.out.println((serverReply.sender == null
+                    ? "*Server message* " : "[" + serverReply.sender + "] ")
+                    + serverReply.message);
+        }
     }
 
     private String requestUserInput(String userMessage) {

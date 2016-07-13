@@ -14,10 +14,21 @@ public class CommandManager implements BeanFactoryAware {
     private ConfigurableListableBeanFactory factory;
     private Gson parser = new Gson();
 
+    /**
+     * Parse json command data into appropriate object
+     *
+     * @param json received from client json command
+     * @return parsed command data
+     */
     public CommandData parseCommand(String json) {
         return parser.fromJson(json, CommandData.class);
     }
 
+    /**
+     * Validate command data
+     * @param commandData command data
+     * @return true if appropriate command action exists
+     */
     public boolean validate(CommandData commandData) {
         for (String name : factory.getBeanNamesForType(CommandAction.class)) {
             if (name.equals(commandData.commandName)) {
@@ -27,6 +38,11 @@ public class CommandManager implements BeanFactoryAware {
         return false;
     }
 
+    /**
+     * Return command action buy command data.
+     * @param commandData command data
+     * @return command action
+     */
     public CommandAction getCommandAction(CommandData commandData) {
         return factory.getBean(commandData.commandName, CommandAction.class);
     }

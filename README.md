@@ -5,4 +5,4 @@ gradle serverRun -q
 
 
 Run client:
-gradle run -q
+gradle clientRun -q

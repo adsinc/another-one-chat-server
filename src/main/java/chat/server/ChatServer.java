@@ -87,12 +87,10 @@ public class ChatServer {
                     }
 
                     if (key.isWritable()) {
-                        System.out.println("Write");
                         write(key);
                     }
 
                     if (key.isReadable()) {
-                        System.out.println("Read");
                         read(key);
                     }
                 }

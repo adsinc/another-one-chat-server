@@ -1,6 +1,7 @@
 package chat.server.commands;
 
 import chat.common.data.CommandData;
+import com.google.gson.JsonParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,17 @@ public class CommandManagerTest {
     @Test
     public void testParseCommand() throws Exception {
         testCommands.forEach((json, cd) -> assertEquals(cd, commandManager.parseCommand(json)));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testIncorrectCommand() throws Exception {
+        commandManager.parseCommand("test");
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testCommandWithAdditionalFields() throws Exception {
+        commandManager.parseCommand("{\"commandName\": \"c\", \"sender\": \"s\", \"message\": \"m\"," +
+                "\"receiver\": \"r\" \"incorrectField\": \"r\" }");
     }
 
     @Test

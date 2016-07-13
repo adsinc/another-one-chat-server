@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Main chat server bean.
+ * Main chat server bean
  */
 public class ChatServer {
 

@@ -1,4 +1,8 @@
 # another-one-chat-server
 
-Run server: 
-Run client: 
+Run server:
+gradle serverRun -q
+
+
+Run client:
+gradle run -q

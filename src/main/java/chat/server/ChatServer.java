@@ -49,6 +49,9 @@ public class ChatServer {
         this.timeout = timeout;
     }
 
+    /**
+     * Start server
+     */
     public void start() {
         Objects.requireNonNull(port, "Port is not defined");
         try {
@@ -125,7 +128,6 @@ public class ChatServer {
         SocketChannel client = (SocketChannel) key.channel();
         byte[] msg = clientsMessages.remove(client);
         client.write(ByteBuffer.wrap(msg));
-        // todo intesting place maybe dont do it
         key.interestOps(SelectionKey.OP_READ);
     }
 
@@ -141,7 +143,6 @@ public class ChatServer {
             client.close();
             return;
         }
-        // todo think there
         if (readLength == -1) {
             System.out.println("Nothing was there to be read, closing connection");
             client.close();
@@ -153,7 +154,7 @@ public class ChatServer {
         byte[] data = new byte[readLength];
         buffer.get(data, 0, readLength);
 
-        String json = new String(data, Charset.forName("UTF-8"));
+        String json = new String(data, UTF8);
         System.out.println("Received: " + json);
 
         try {

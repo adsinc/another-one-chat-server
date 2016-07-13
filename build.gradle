@@ -17,11 +17,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-run {
-    standardInput = System.in
-    mainClassName = "chat.client.ClientRunner"
-}
-
 task serverRun(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
     main = "chat.server.ServerRunner"
